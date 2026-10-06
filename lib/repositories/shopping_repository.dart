@@ -1,9 +1,17 @@
 import '../models/shopping_item.dart';
 import '../services/shopping_database.dart';
+import 'package:sqflite/sqflite.dart';
 
 class ShoppingRepository {
+
+  final Future<Database> Function() _openDatabase;
+
+  ShoppingRepository({
+    Future<Database> Function()? openDatabase,
+  }) : _openDatabase = openDatabase ?? ShoppingDatabase.open;
+
   Future<List<ShoppingItem>> loadItems() async {
-    final db = await ShoppingDatabase.open();
+    final db = await _openDatabase();
 
     final rows = await db.query(
       'shopping_items',
@@ -16,7 +24,7 @@ class ShoppingRepository {
   }
 
   Future<int> addItem(ShoppingItem item) async {
-    final db = await ShoppingDatabase.open();
+    final db = await _openDatabase();
 
     return db.insert(
       'shopping_items',
@@ -28,7 +36,7 @@ class ShoppingRepository {
     required int id,
     required bool isBought,
   }) async {
-    final db = await ShoppingDatabase.open();
+    final db = await _openDatabase();
 
     return db.update(
       'shopping_items',
@@ -39,7 +47,7 @@ class ShoppingRepository {
   }
 
   Future<int> deleteItem(int id) async {
-    final db = await ShoppingDatabase.open();
+    final db = await _openDatabase();
 
     return db.delete(
       'shopping_items',
