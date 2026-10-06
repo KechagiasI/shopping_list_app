@@ -4,7 +4,12 @@ import 'package:flutter/material.dart';
 import '../models/shopping_item.dart';
 
 class ShoppingListPage extends StatefulWidget {
-  const ShoppingListPage({super.key});
+  final ShoppingRepository? repository;
+
+  const ShoppingListPage({
+    super.key,
+    this.repository,
+  });
 
   @override
   State<ShoppingListPage> createState() => _ShoppingListPageState();
@@ -13,7 +18,7 @@ class ShoppingListPage extends StatefulWidget {
 class _ShoppingListPageState extends State<ShoppingListPage> {
   final List<ShoppingItem> _items = [];
 
-  final ShoppingRepository _repository = ShoppingRepository();
+  late final ShoppingRepository _repository;
 
   final Set<int> _updatingItemIds = {};
 
@@ -23,6 +28,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   @override
   void initState() {
     super.initState();
+    _repository = widget.repository ?? ShoppingRepository();
     _loadItems();
   }
 
