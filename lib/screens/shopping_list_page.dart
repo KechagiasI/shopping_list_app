@@ -440,6 +440,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                                 id: id,
                                 name: name,
                                 quantity: quantity,
+                                category: _items[index].category,
                                 isBought: _items[index].isBought,
                               );
                             });

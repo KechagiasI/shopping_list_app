@@ -17,14 +17,15 @@ class ShoppingDatabase {
     return selectedFactory.openDatabase(
       databasePath,
       options: OpenDatabaseOptions(
-        version: 2,
+        version: 3,
         onCreate: (db, version) async {
           await db.execute('''
             CREATE TABLE shopping_items (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               name TEXT NOT NULL,
               isBought INTEGER NOT NULL DEFAULT 0,
-              quantity INTEGER NOT NULL DEFAULT 1
+              quantity INTEGER NOT NULL DEFAULT 1,
+              category TEXT NOT NULL DEFAULT 'other'
             )
           ''');
         },
@@ -33,6 +34,13 @@ class ShoppingDatabase {
             await db.execute(
               'ALTER TABLE shopping_items '
                   'ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1',
+            );
+          }
+
+          if (oldVersion < 3) {
+            await db.execute(
+              'ALTER TABLE shopping_items '
+                  "ADD COLUMN category TEXT NOT NULL DEFAULT 'other'",
             );
           }
         },

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shopping_list_app/models/shopping_category.dart';
 import 'package:shopping_list_app/models/shopping_item.dart';
 
 void main() {
@@ -9,6 +10,7 @@ void main() {
       expect(item.id, isNull);
       expect(item.quantity, 1);
       expect(item.isBought, isFalse);
+      expect(item.category, ShoppingCategory.other);
     });
 
     test('New item is mapped without a database id', () {
@@ -20,6 +22,7 @@ void main() {
       expect(item.toMap(), {
         'name': 'Milch',
         'quantity': 3,
+        'category': 'other',
         'isBought': 0,
       });
     });
@@ -29,13 +32,16 @@ void main() {
         'id': 7,
         'name': 'Brot',
         'quantity': 2,
+        'category': 'bakery',
         'isBought': 1,
       });
 
       expect(item.id, 7);
       expect(item.name, 'Brot');
       expect(item.quantity, 2);
+      expect(item.category, ShoppingCategory.bakery);
       expect(item.isBought, isTrue);
+      expect(item.toMap()['category'], 'bakery');
     });
 
     test('Purchase status uses SQLite integer values', () {
