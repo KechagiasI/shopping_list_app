@@ -320,6 +320,168 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
     }
   }
 
+  Future<void> _showEditProductDialog(ShoppingItem item) async {
+    final id = item.id;
+
+    if (id == null || _updatingItemIds.contains(id)) return;
+
+    String editedName = item.name;
+    String editedQuantity = item.quantity.toString();
+    String? errorMessage;
+    bool isSaving = false;
+
+    setState(() {
+      _updatingItemIds.add(id);
+    });
+
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return StatefulBuilder(
+            builder: (dialogContext, setDialogState) {
+              return PopScope(
+                canPop: !isSaving,
+                child: AlertDialog(
+                  title: const Text('Produkt bearbeiten'),
+                  content: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextFormField(
+                          initialValue: item.name,
+                          enabled: !isSaving,
+                          onChanged: (value) {
+                            editedName = value;
+                          },
+                          decoration: const InputDecoration(
+                            labelText: 'Produkt',
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          initialValue: item.quantity.toString(),
+                          enabled: !isSaving,
+                          keyboardType: TextInputType.number,
+                          onChanged: (value) {
+                            editedQuantity = value;
+                          },
+                          decoration: const InputDecoration(
+                            labelText: 'Menge',
+                          ),
+                        ),
+                        if (errorMessage != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            errorMessage!,
+                            style: TextStyle(
+                              color: Theme.of(dialogContext).colorScheme.error,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: isSaving
+                          ? null
+                          : () => Navigator.pop(dialogContext),
+                      child: const Text('Abbrechen'),
+                    ),
+                    TextButton(
+                      onPressed: isSaving
+                          ? null
+                          : () async {
+                        if (isSaving) return;
+
+                        final name = editedName.trim();
+                        final quantity =
+                        int.tryParse(editedQuantity.trim());
+
+                        if (name.isEmpty ||
+                            quantity == null ||
+                            quantity <= 0) {
+                          setDialogState(() {
+                            errorMessage =
+                            'Bitte Produkt und eine gültige Menge eingeben.';
+                          });
+                          return;
+                        }
+
+                        setDialogState(() {
+                          isSaving = true;
+                          errorMessage = null;
+                        });
+
+                        try {
+                          final updatedRows = await _repository.updateItem(
+                            id: id,
+                            name: name,
+                            quantity: quantity,
+                          );
+
+                          if (updatedRows != 1) {
+                            throw StateError(
+                              'Expected to update one shopping item.',
+                            );
+                          }
+
+                          if (!mounted) return;
+
+                          final index = _items.indexWhere(
+                                (existingItem) => existingItem.id == id,
+                          );
+
+                          if (index != -1) {
+                            setState(() {
+                              _items[index] = ShoppingItem(
+                                id: id,
+                                name: name,
+                                quantity: quantity,
+                                isBought: _items[index].isBought,
+                              );
+                            });
+                          }
+                        } catch (error, stackTrace) {
+                          debugPrint('Failed to edit shopping item: $error');
+                          debugPrintStack(stackTrace: stackTrace);
+
+                          if (!dialogContext.mounted) return;
+
+                          setDialogState(() {
+                            isSaving = false;
+                            errorMessage =
+                            'Speichern fehlgeschlagen. Bitte erneut versuchen.';
+                          });
+                          return;
+                        }
+
+                        if (dialogContext.mounted) {
+                          Navigator.pop(dialogContext);
+                        }
+                      },
+                      child: Text(
+                        isSaving ? 'Wird gespeichert…' : 'Speichern',
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _updatingItemIds.remove(id);
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -360,6 +522,9 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
         itemBuilder: (context, index) {
           final item = _items[index];
           return ListTile(
+            onTap: _updatingItemIds.contains(item.id)
+                ? null
+                : () => _showEditProductDialog(item),
             leading: Checkbox(
               value: item.isBought,
               onChanged: _updatingItemIds.contains(item.id)

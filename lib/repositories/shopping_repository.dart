@@ -46,6 +46,38 @@ class ShoppingRepository {
     );
   }
 
+  Future<int> updateItem({
+    required int id,
+    required String name,
+    required int quantity,
+  }) async {
+    final trimmedName = name.trim();
+
+    if (trimmedName.isEmpty) {
+      throw ArgumentError.value(name, 'name', 'Must not be empty.');
+    }
+
+    if (quantity <= 0) {
+      throw ArgumentError.value(
+        quantity,
+        'quantity',
+        'Must be greater than zero.',
+      );
+    }
+
+    final db = await _openDatabase();
+
+    return db.update(
+      'shopping_items',
+      {
+        'name': trimmedName,
+        'quantity': quantity,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<int> deleteItem(int id) async {
     final db = await _openDatabase();
 

@@ -28,6 +28,15 @@ class LoadingTestRepository implements ShoppingRepository {
   }
 
   @override
+  Future<int> updateItem({
+    required int id,
+    required String name,
+    required int quantity,
+  }) {
+    throw UnsupportedError('Not used in loading tests.');
+  }
+
+  @override
   Future<int> deleteItem(int id) {
     throw UnsupportedError('Not used in loading tests.');
   }
@@ -70,6 +79,28 @@ class DeleteTestRepository extends LoadingTestRepository {
 
   @override
   Future<int> deleteItem(int id) => onDelete(id);
+}
+
+class EditTestRepository extends LoadingTestRepository {
+  final Future<int> Function(
+      int id,
+      String name,
+      int quantity,
+      ) onUpdate;
+
+  EditTestRepository({
+    required List<ShoppingItem> items,
+    required this.onUpdate,
+  }) : super(onLoad: () async => items);
+
+  @override
+  Future<int> updateItem({
+    required int id,
+    required String name,
+    required int quantity,
+  }) {
+    return onUpdate(id, name, quantity);
+  }
 }
 
 void main() {
@@ -523,10 +554,411 @@ void main() {
         );
         expect(checkbox.value, isFalse);
         expect(checkbox.onChanged, isNotNull);
-
         final deleteButton = tester.widget<IconButton>(
           deleteButtonFinder,
         );
         expect(deleteButton.onPressed, isNotNull);
+      });
+
+  testWidgets('Editing shows existing values and preserves purchase status',
+          (tester) async {
+        var updateCalls = 0;
+        int? savedId;
+        String? savedName;
+        int? savedQuantity;
+
+        final repository = EditTestRepository(
+          items: [
+            ShoppingItem(
+              id: 7,
+              name: 'Milch',
+              quantity: 3,
+              isBought: true,
+            ),
+          ],
+          onUpdate: (id, name, quantity) async {
+            updateCalls++;
+            savedId = id;
+            savedName = name;
+            savedQuantity = quantity;
+            return 1;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListPage(repository: repository),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Milch'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Produkt bearbeiten'), findsOneWidget);
+
+        final inputs = find.byType(EditableText);
+        expect(inputs, findsNWidgets(2));
+
+        expect(
+          tester.widget<EditableText>(inputs.at(0)).controller.text,
+          'Milch',
+        );
+        expect(
+          tester.widget<EditableText>(inputs.at(1)).controller.text,
+          '3',
+        );
+        expect(updateCalls, 0);
+
+        await tester.enterText(inputs.at(0), '  Hafermilch  ');
+        await tester.enterText(inputs.at(1), '5');
+
+        await tester.tap(find.widgetWithText(TextButton, 'Speichern'));
+        await tester.pumpAndSettle();
+
+        expect(updateCalls, 1);
+        expect(savedId, 7);
+        expect(savedName, 'Hafermilch');
+        expect(savedQuantity, 5);
+
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(ListTile), findsOneWidget);
+        expect(find.text('Milch'), findsNothing);
+        expect(find.text('Hafermilch'), findsOneWidget);
+        expect(find.text('Menge: 5'), findsOneWidget);
+
+        final checkbox = tester.widget<Checkbox>(
+          find.byType(Checkbox),
+        );
+        expect(checkbox.value, isTrue);
+        expect(checkbox.onChanged, isNotNull);
+
+        final productText = tester.widget<Text>(
+          find.text('Hafermilch'),
+        );
+        expect(
+          productText.style?.decoration,
+          TextDecoration.lineThrough,
+        );
+
+        final tile = tester.widget<ListTile>(find.byType(ListTile));
+        expect(tile.onTap, isNotNull);
+      });
+
+  testWidgets('Cancelling editing preserves the original item',
+          (tester) async {
+        var updateCalls = 0;
+
+        final repository = EditTestRepository(
+          items: [
+            ShoppingItem(id: 7, name: 'Milch', quantity: 3),
+          ],
+          onUpdate: (id, name, quantity) async {
+            updateCalls++;
+            return 1;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListPage(repository: repository),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Milch'));
+        await tester.pumpAndSettle();
+
+        final inputs = find.byType(EditableText);
+
+        await tester.enterText(inputs.at(0), 'Hafermilch');
+        await tester.enterText(inputs.at(1), '5');
+
+        await tester.tap(find.widgetWithText(TextButton, 'Abbrechen'));
+        await tester.pumpAndSettle();
+
+        expect(updateCalls, 0);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.text('Milch'), findsOneWidget);
+        expect(find.text('Menge: 3'), findsOneWidget);
+        expect(find.text('Hafermilch'), findsNothing);
+
+        final checkbox = tester.widget<Checkbox>(
+          find.byType(Checkbox),
+        );
+        expect(checkbox.value, isFalse);
+        expect(checkbox.onChanged, isNotNull);
+
+        final deleteButton = tester.widget<IconButton>(
+          find.byWidgetPredicate(
+                (widget) =>
+            widget is IconButton &&
+                widget.tooltip == 'Produkt löschen',
+          ),
+        );
+        expect(deleteButton.onPressed, isNotNull);
+
+        // Reopening must show the original values.
+        await tester.tap(find.text('Milch'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Produkt bearbeiten'), findsOneWidget);
+
+        expect(
+          tester.widget<EditableText>(inputs.at(0)).controller.text,
+          'Milch',
+        );
+        expect(
+          tester.widget<EditableText>(inputs.at(1)).controller.text,
+          '3',
+        );
+
+        await tester.tap(find.widgetWithText(TextButton, 'Abbrechen'));
+        await tester.pumpAndSettle();
+
+        expect(updateCalls, 0);
+      });
+
+  testWidgets('Invalid editing input is rejected until corrected',
+          (tester) async {
+        var updateCalls = 0;
+
+        final repository = EditTestRepository(
+          items: [
+            ShoppingItem(id: 7, name: 'Milch', quantity: 3),
+          ],
+          onUpdate: (id, name, quantity) async {
+            updateCalls++;
+            expect(id, 7);
+            expect(name, 'Hafermilch');
+            expect(quantity, 5);
+            return 1;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListPage(repository: repository),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Milch'));
+        await tester.pumpAndSettle();
+
+        final inputs = find.byType(EditableText);
+        final saveButton = find.widgetWithText(TextButton, 'Speichern');
+
+        final invalidInputs = [
+          ('', '3'),
+          ('   ', '3'),
+          ('Hafermilch', ''),
+          ('Hafermilch', '0'),
+          ('Hafermilch', '-1'),
+          ('Hafermilch', 'abc'),
+          ('Hafermilch', '1.5'),
+        ];
+
+        for (final (name, quantity) in invalidInputs) {
+          await tester.enterText(inputs.at(0), name);
+          await tester.enterText(inputs.at(1), quantity);
+
+          await tester.tap(saveButton);
+          await tester.pumpAndSettle();
+
+          expect(updateCalls, 0);
+          expect(find.byType(AlertDialog), findsOneWidget);
+          expect(
+            find.text('Bitte Produkt und eine gültige Menge eingeben.'),
+            findsOneWidget,
+          );
+        }
+
+        await tester.enterText(inputs.at(0), 'Hafermilch');
+        await tester.enterText(inputs.at(1), '5');
+
+        await tester.tap(saveButton);
+        await tester.pumpAndSettle();
+
+        expect(updateCalls, 1);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.text('Hafermilch'), findsOneWidget);
+        expect(find.text('Menge: 5'), findsOneWidget);
+      });
+
+  testWidgets('Failed editing preserves input and allows retry',
+          (tester) async {
+        var updateCalls = 0;
+        final submittedChanges = <(int, String, int)>[];
+
+        final repository = EditTestRepository(
+          items: [
+            ShoppingItem(
+              id: 7,
+              name: 'Milch',
+              quantity: 3,
+              isBought: true,
+            ),
+          ],
+          onUpdate: (id, name, quantity) async {
+            updateCalls++;
+            submittedChanges.add((id, name, quantity));
+
+            if (updateCalls == 1) {
+              throw StateError('Simulated editing failure');
+            }
+
+            return 1;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListPage(repository: repository),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Milch'));
+        await tester.pumpAndSettle();
+
+        final inputs = find.byType(EditableText);
+
+        await tester.enterText(inputs.at(0), 'Hafermilch');
+        await tester.enterText(inputs.at(1), '5');
+
+        await tester.tap(find.widgetWithText(TextButton, 'Speichern'));
+        await tester.pumpAndSettle();
+
+        expect(updateCalls, 1);
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(
+          find.text('Speichern fehlgeschlagen. Bitte erneut versuchen.'),
+          findsOneWidget,
+        );
+
+        expect(
+          tester.widget<EditableText>(inputs.at(0)).controller.text,
+          'Hafermilch',
+        );
+        expect(
+          tester.widget<EditableText>(inputs.at(1)).controller.text,
+          '5',
+        );
+
+        // The list behind the dialog must retain the original values.
+        final tile = tester.widget<ListTile>(find.byType(ListTile));
+        expect((tile.title as Text).data, 'Milch');
+        expect((tile.subtitle as Text).data, 'Menge: 3');
+
+        final saveButton = tester.widget<TextButton>(
+          find.widgetWithText(TextButton, 'Speichern'),
+        );
+        expect(saveButton.onPressed, isNotNull);
+
+        await tester.tap(find.widgetWithText(TextButton, 'Speichern'));
+        await tester.pumpAndSettle();
+
+        expect(updateCalls, 2);
+        expect(submittedChanges, [
+          (7, 'Hafermilch', 5),
+          (7, 'Hafermilch', 5),
+        ]);
+
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.text('Hafermilch'), findsOneWidget);
+        expect(find.text('Menge: 5'), findsOneWidget);
+
+        final checkbox = tester.widget<Checkbox>(
+          find.byType(Checkbox),
+        );
+        expect(checkbox.value, isTrue);
+        expect(checkbox.onChanged, isNotNull);
+      });
+
+  testWidgets('Repeated save taps update an item only once',
+          (tester) async {
+        final pendingUpdate = Completer<int>();
+        var updateCalls = 0;
+        final submittedChanges = <(int, String, int)>[];
+
+        final repository = EditTestRepository(
+          items: [
+            ShoppingItem(id: 7, name: 'Milch', quantity: 3),
+          ],
+          onUpdate: (id, name, quantity) {
+            updateCalls++;
+            submittedChanges.add((id, name, quantity));
+            return pendingUpdate.future;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListPage(repository: repository),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Milch'));
+        await tester.pumpAndSettle();
+
+        final inputs = find.byType(EditableText);
+
+        await tester.enterText(inputs.at(0), 'Hafermilch');
+        await tester.enterText(inputs.at(1), '5');
+
+        final saveButton = find.widgetWithText(TextButton, 'Speichern');
+
+        // Two taps before the dialog rebuilds.
+        await tester.tap(saveButton);
+        await tester.tap(saveButton);
+
+        expect(updateCalls, 1);
+
+        await tester.pump();
+
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(find.text('Wird gespeichert…'), findsOneWidget);
+
+        final savingButton = tester.widget<TextButton>(
+          find.widgetWithText(TextButton, 'Wird gespeichert…'),
+        );
+        final cancelButton = tester.widget<TextButton>(
+          find.widgetWithText(TextButton, 'Abbrechen'),
+        );
+
+        expect(savingButton.onPressed, isNull);
+        expect(cancelButton.onPressed, isNull);
+
+        final fields = tester.widgetList<TextFormField>(
+          find.byType(TextFormField),
+        );
+
+        expect(fields, hasLength(2));
+        for (final field in fields) {
+          expect(field.enabled, isFalse);
+        }
+
+        final originalTile = tester.widget<ListTile>(
+          find.byType(ListTile),
+        );
+        expect((originalTile.title as Text).data, 'Milch');
+        expect((originalTile.subtitle as Text).data, 'Menge: 3');
+
+        pendingUpdate.complete(1);
+        await tester.pumpAndSettle();
+
+        expect(updateCalls, 1);
+        expect(submittedChanges, [(7, 'Hafermilch', 5)]);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(ListTile), findsOneWidget);
+        expect(find.text('Hafermilch'), findsOneWidget);
+        expect(find.text('Menge: 5'), findsOneWidget);
+
+        final updatedTile = tester.widget<ListTile>(
+          find.byType(ListTile),
+        );
+        expect(updatedTile.onTap, isNotNull);
       });
 }

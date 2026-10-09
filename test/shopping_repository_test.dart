@@ -144,4 +144,105 @@ void main() {
       throwsA(isA<StateError>()),
     );
   });
+
+  test('Editing changes only the selected item and preserves its identity',
+          () async {
+        final milkId = await repository.addItem(
+          ShoppingItem(
+            name: 'Milch',
+            quantity: 3,
+            isBought: true,
+          ),
+        );
+
+        final breadId = await repository.addItem(
+          ShoppingItem(name: 'Brot', quantity: 2),
+        );
+
+        final updatedRows = await repository.updateItem(
+          id: milkId,
+          name: '  Hafermilch  ',
+          quantity: 5,
+        );
+
+        expect(updatedRows, 1);
+
+        final items = await repository.loadItems();
+
+        expect(items, hasLength(2));
+
+        final editedItem = items.singleWhere((item) => item.id == milkId);
+        expect(editedItem.id, milkId);
+        expect(editedItem.name, 'Hafermilch');
+        expect(editedItem.quantity, 5);
+        expect(editedItem.isBought, isTrue);
+
+        final unchangedItem = items.singleWhere((item) => item.id == breadId);
+        expect(unchangedItem.name, 'Brot');
+        expect(unchangedItem.quantity, 2);
+        expect(unchangedItem.isBought, isFalse);
+      });
+
+  test('Editing a missing item returns zero and keeps existing items',
+          () async {
+        final id = await repository.addItem(
+          ShoppingItem(name: 'Milch', quantity: 3),
+        );
+
+        final updatedRows = await repository.updateItem(
+          id: id + 1,
+          name: 'Brot',
+          quantity: 2,
+        );
+
+        expect(updatedRows, 0);
+
+        final items = await repository.loadItems();
+
+        expect(items, hasLength(1));
+        expect(items.single.id, id);
+        expect(items.single.name, 'Milch');
+        expect(items.single.quantity, 3);
+      });
+
+  test('Invalid edits are rejected without changing the stored item',
+          () async {
+        final id = await repository.addItem(
+          ShoppingItem(
+            name: 'Milch',
+            quantity: 3,
+            isBought: true,
+          ),
+        );
+
+        for (final invalidName in ['', '   ']) {
+          await expectLater(
+            repository.updateItem(
+              id: id,
+              name: invalidName,
+              quantity: 5,
+            ),
+            throwsA(isA<ArgumentError>()),
+          );
+        }
+
+        for (final invalidQuantity in [0, -1]) {
+          await expectLater(
+            repository.updateItem(
+              id: id,
+              name: 'Hafermilch',
+              quantity: invalidQuantity,
+            ),
+            throwsA(isA<ArgumentError>()),
+          );
+        }
+
+        final items = await repository.loadItems();
+
+        expect(items, hasLength(1));
+        expect(items.single.id, id);
+        expect(items.single.name, 'Milch');
+        expect(items.single.quantity, 3);
+        expect(items.single.isBought, isTrue);
+      });
 }
