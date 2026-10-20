@@ -3,6 +3,7 @@ import 'package:shopping_list_app/models/shopping_item.dart';
 import 'package:shopping_list_app/repositories/shopping_repository.dart';
 import 'package:shopping_list_app/services/shopping_database.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:shopping_list_app/models/shopping_category.dart';
 
 void main() {
   late Database db;
@@ -244,5 +245,62 @@ void main() {
         expect(items.single.name, 'Milch');
         expect(items.single.quantity, 3);
         expect(items.single.isBought, isTrue);
+      });
+
+  test('Category updates affect only the selected item and survive later edits',
+          () async {
+        final milkId = await repository.addItem(
+          ShoppingItem(
+            name: 'Milch',
+            quantity: 3,
+            isBought: true,
+          ),
+        );
+
+        final breadId = await repository.addItem(
+          ShoppingItem(
+            name: 'Brot',
+            quantity: 2,
+            category: ShoppingCategory.bakery,
+          ),
+        );
+
+        expect(
+          await repository.updateItem(
+            id: milkId,
+            name: 'Milch',
+            quantity: 3,
+            category: ShoppingCategory.dairy,
+          ),
+          1,
+        );
+
+        var items = await repository.loadItems();
+        var milk = items.singleWhere((item) => item.id == milkId);
+        final bread = items.singleWhere((item) => item.id == breadId);
+
+        expect(milk.category, ShoppingCategory.dairy);
+        expect(milk.isBought, isTrue);
+        expect(bread.category, ShoppingCategory.bakery);
+        expect(bread.name, 'Brot');
+        expect(bread.quantity, 2);
+
+        // Omitting category must preserve the stored category.
+        expect(
+          await repository.updateItem(
+            id: milkId,
+            name: 'Vollmilch',
+            quantity: 5,
+          ),
+          1,
+        );
+
+        items = await repository.loadItems();
+        milk = items.singleWhere((item) => item.id == milkId);
+
+        expect(milk.name, 'Vollmilch');
+        expect(milk.quantity, 5);
+        expect(milk.category, ShoppingCategory.dairy);
+        expect(milk.isBought, isTrue);
       });
 }

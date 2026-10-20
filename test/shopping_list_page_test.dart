@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shopping_list_app/models/shopping_item.dart';
 import 'package:shopping_list_app/repositories/shopping_repository.dart';
 import 'package:shopping_list_app/screens/shopping_list_page.dart';
+import 'package:shopping_list_app/models/shopping_category.dart';
 
 class LoadingTestRepository implements ShoppingRepository {
   final Future<List<ShoppingItem>> Function() onLoad;
@@ -32,6 +33,7 @@ class LoadingTestRepository implements ShoppingRepository {
     required int id,
     required String name,
     required int quantity,
+    ShoppingCategory? category,
   }) {
     throw UnsupportedError('Not used in loading tests.');
   }
@@ -98,8 +100,33 @@ class EditTestRepository extends LoadingTestRepository {
     required int id,
     required String name,
     required int quantity,
+    ShoppingCategory? category,
   }) {
     return onUpdate(id, name, quantity);
+  }
+}
+
+class CategoryEditTestRepository extends LoadingTestRepository {
+  final Future<int> Function(
+      int id,
+      String name,
+      int quantity,
+      ShoppingCategory? category,
+      ) onUpdate;
+
+  CategoryEditTestRepository({
+    required List<ShoppingItem> items,
+    required this.onUpdate,
+  }) : super(onLoad: () async => items);
+
+  @override
+  Future<int> updateItem({
+    required int id,
+    required String name,
+    required int quantity,
+    ShoppingCategory? category,
+  }) {
+    return onUpdate(id, name, quantity, category);
   }
 }
 
@@ -133,7 +160,7 @@ void main() {
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text('Milch'), findsOneWidget);
-    expect(find.text('Menge: 3'), findsOneWidget);
+    expect(find.text('Menge: 3 · Sonstiges'), findsOneWidget);
 
     final enabledAddButton = tester.widget<FloatingActionButton>(
       find.byType(FloatingActionButton),
@@ -200,7 +227,7 @@ void main() {
 
     expect(loadCalls, 2);
     expect(find.text('Brot'), findsOneWidget);
-    expect(find.text('Menge: 2'), findsOneWidget);
+    expect(find.text('Menge: 2 · Sonstiges'), findsOneWidget);
     expect(
       find.text('Die Einkaufsliste konnte nicht geladen werden.'),
       findsNothing,
@@ -277,7 +304,7 @@ void main() {
         expect(find.byType(AlertDialog), findsNothing);
         expect(find.byType(ListTile), findsOneWidget);
         expect(find.text('Milch'), findsOneWidget);
-        expect(find.text('Menge: 3'), findsOneWidget);
+        expect(find.text('Menge: 3 · Sonstiges'), findsOneWidget);
       });
 
   testWidgets('Repeated add taps save only one item', (tester) async {
@@ -346,7 +373,7 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
     expect(find.byType(ListTile), findsOneWidget);
     expect(find.text('Milch'), findsOneWidget);
-    expect(find.text('Menge: 3'), findsOneWidget);
+    expect(find.text('Menge: 3 · Sonstiges'), findsOneWidget);
   });
 
   testWidgets('Failed purchase update preserves state and allows retry',
@@ -478,7 +505,7 @@ void main() {
         expect(deleteCalls, 1);
         expect(find.byType(AlertDialog), findsNothing);
         expect(find.text('Milch'), findsOneWidget);
-        expect(find.text('Menge: 3'), findsOneWidget);
+        expect(find.text('Menge: 3 · Sonstiges'), findsOneWidget);
         expect(
           find.text('Löschen fehlgeschlagen. Bitte erneut versuchen.'),
           findsOneWidget,
@@ -547,7 +574,7 @@ void main() {
         expect(deleteCalls, 0);
         expect(find.byType(AlertDialog), findsNothing);
         expect(find.text('Milch'), findsOneWidget);
-        expect(find.text('Menge: 3'), findsOneWidget);
+        expect(find.text('Menge: 3 · Sonstiges'), findsOneWidget);
 
         final checkbox = tester.widget<Checkbox>(
           find.byType(Checkbox),
@@ -625,7 +652,7 @@ void main() {
         expect(find.byType(ListTile), findsOneWidget);
         expect(find.text('Milch'), findsNothing);
         expect(find.text('Hafermilch'), findsOneWidget);
-        expect(find.text('Menge: 5'), findsOneWidget);
+        expect(find.text('Menge: 5 · Sonstiges'), findsOneWidget);
 
         final checkbox = tester.widget<Checkbox>(
           find.byType(Checkbox),
@@ -680,7 +707,7 @@ void main() {
         expect(updateCalls, 0);
         expect(find.byType(AlertDialog), findsNothing);
         expect(find.text('Milch'), findsOneWidget);
-        expect(find.text('Menge: 3'), findsOneWidget);
+        expect(find.text('Menge: 3 · Sonstiges'), findsOneWidget);
         expect(find.text('Hafermilch'), findsNothing);
 
         final checkbox = tester.widget<Checkbox>(
@@ -783,7 +810,7 @@ void main() {
         expect(updateCalls, 1);
         expect(find.byType(AlertDialog), findsNothing);
         expect(find.text('Hafermilch'), findsOneWidget);
-        expect(find.text('Menge: 5'), findsOneWidget);
+        expect(find.text('Menge: 5 · Sonstiges'), findsOneWidget);
       });
 
   testWidgets('Failed editing preserves input and allows retry',
@@ -849,7 +876,7 @@ void main() {
         // The list behind the dialog must retain the original values.
         final tile = tester.widget<ListTile>(find.byType(ListTile));
         expect((tile.title as Text).data, 'Milch');
-        expect((tile.subtitle as Text).data, 'Menge: 3');
+        expect((tile.subtitle as Text).data, 'Menge: 3 · Sonstiges');
 
         final saveButton = tester.widget<TextButton>(
           find.widgetWithText(TextButton, 'Speichern'),
@@ -867,7 +894,7 @@ void main() {
 
         expect(find.byType(AlertDialog), findsNothing);
         expect(find.text('Hafermilch'), findsOneWidget);
-        expect(find.text('Menge: 5'), findsOneWidget);
+        expect(find.text('Menge: 5 · Sonstiges'), findsOneWidget);
 
         final checkbox = tester.widget<Checkbox>(
           find.byType(Checkbox),
@@ -944,7 +971,7 @@ void main() {
           find.byType(ListTile),
         );
         expect((originalTile.title as Text).data, 'Milch');
-        expect((originalTile.subtitle as Text).data, 'Menge: 3');
+        expect((originalTile.subtitle as Text).data, 'Menge: 3 · Sonstiges');
 
         pendingUpdate.complete(1);
         await tester.pumpAndSettle();
@@ -954,11 +981,303 @@ void main() {
         expect(find.byType(AlertDialog), findsNothing);
         expect(find.byType(ListTile), findsOneWidget);
         expect(find.text('Hafermilch'), findsOneWidget);
-        expect(find.text('Menge: 5'), findsOneWidget);
+        expect(find.text('Menge: 5 · Sonstiges'), findsOneWidget);
 
         final updatedTile = tester.widget<ListTile>(
           find.byType(ListTile),
         );
         expect(updatedTile.onTap, isNotNull);
+      });
+
+  testWidgets('Adding an item saves and displays the selected category',
+          (tester) async {
+        ShoppingItem? submittedItem;
+        var addCalls = 0;
+
+        final repository = AddTestRepository(
+          onAdd: (item) async {
+            addCalls++;
+            submittedItem = item;
+            return 7;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListPage(repository: repository),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byType(FloatingActionButton));
+        await tester.pumpAndSettle();
+
+        final inputs = find.byType(EditableText);
+
+        await tester.enterText(inputs.at(0), 'Milch');
+        await tester.enterText(inputs.at(1), '3');
+
+        final categoryDropdown = find.byType(
+          DropdownButton<ShoppingCategory>,
+        );
+
+        expect(
+          tester.widget<DropdownButton<ShoppingCategory>>(
+            categoryDropdown,
+          ).value,
+          ShoppingCategory.other,
+        );
+
+        await tester.tap(categoryDropdown);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Milchprodukte & Eier').last);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.widgetWithText(TextButton, 'Hinzufügen'));
+        await tester.pumpAndSettle();
+
+        expect(addCalls, 1);
+        expect(submittedItem, isNotNull);
+        expect(submittedItem!.name, 'Milch');
+        expect(submittedItem!.quantity, 3);
+        expect(submittedItem!.category, ShoppingCategory.dairy);
+
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(ListTile), findsOneWidget);
+        expect(
+          find.text('Menge: 3 · Milchprodukte & Eier'),
+          findsOneWidget,
+        );
+      });
+
+  testWidgets('Editing category saves the selection and preserves item details',
+          (tester) async {
+        var updateCalls = 0;
+        int? submittedId;
+        String? submittedName;
+        int? submittedQuantity;
+        ShoppingCategory? submittedCategory;
+
+        final repository = CategoryEditTestRepository(
+          items: [
+            ShoppingItem(
+              id: 7,
+              name: 'Milch',
+              quantity: 3,
+              category: ShoppingCategory.dairy,
+              isBought: true,
+            ),
+          ],
+          onUpdate: (id, name, quantity, category) async {
+            updateCalls++;
+            submittedId = id;
+            submittedName = name;
+            submittedQuantity = quantity;
+            submittedCategory = category;
+            return 1;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListPage(repository: repository),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Milch'));
+        await tester.pumpAndSettle();
+
+        final dropdown = find.byType(DropdownButton<ShoppingCategory>);
+
+        expect(
+          tester.widget<DropdownButton<ShoppingCategory>>(dropdown).value,
+          ShoppingCategory.dairy,
+        );
+
+        await tester.tap(dropdown);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Sonstiges').last);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.widgetWithText(TextButton, 'Speichern'));
+        await tester.pumpAndSettle();
+
+        expect(updateCalls, 1);
+        expect(submittedId, 7);
+        expect(submittedName, 'Milch');
+        expect(submittedQuantity, 3);
+        expect(submittedCategory, ShoppingCategory.other);
+
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.text('Milch'), findsOneWidget);
+        expect(find.text('Menge: 3 · Sonstiges'), findsOneWidget);
+
+        final checkbox = tester.widget<Checkbox>(
+          find.byType(Checkbox),
+        );
+        expect(checkbox.value, isTrue);
+        expect(checkbox.onChanged, isNotNull);
+
+        // Reopening must show the newly saved category.
+        await tester.tap(find.text('Milch'));
+        await tester.pumpAndSettle();
+
+        expect(
+          tester.widget<DropdownButton<ShoppingCategory>>(dropdown).value,
+          ShoppingCategory.other,
+        );
+
+        await tester.tap(find.widgetWithText(TextButton, 'Abbrechen'));
+        await tester.pumpAndSettle();
+
+        expect(updateCalls, 1);
+      });
+
+  testWidgets('Cancelling category editing preserves the original category',
+          (tester) async {
+        var updateCalls = 0;
+
+        final repository = CategoryEditTestRepository(
+          items: [
+            ShoppingItem(
+              id: 7,
+              name: 'Milch',
+              quantity: 3,
+              category: ShoppingCategory.dairy,
+            ),
+          ],
+          onUpdate: (id, name, quantity, category) async {
+            updateCalls++;
+            return 1;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListPage(repository: repository),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Milch'));
+        await tester.pumpAndSettle();
+
+        final dropdown = find.byType(DropdownButton<ShoppingCategory>);
+
+        await tester.tap(dropdown);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Sonstiges').last);
+        await tester.pumpAndSettle();
+
+        expect(
+          tester.widget<DropdownButton<ShoppingCategory>>(dropdown).value,
+          ShoppingCategory.other,
+        );
+
+        await tester.tap(find.widgetWithText(TextButton, 'Abbrechen'));
+        await tester.pumpAndSettle();
+
+        expect(updateCalls, 0);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(
+          find.text('Menge: 3 · Milchprodukte & Eier'),
+          findsOneWidget,
+        );
+
+        await tester.tap(find.text('Milch'));
+        await tester.pumpAndSettle();
+
+        expect(
+          tester.widget<DropdownButton<ShoppingCategory>>(dropdown).value,
+          ShoppingCategory.dairy,
+        );
+
+        await tester.tap(find.widgetWithText(TextButton, 'Abbrechen'));
+        await tester.pumpAndSettle();
+
+        expect(updateCalls, 0);
+      });
+
+  testWidgets('Failed category editing keeps the selection for retry',
+          (tester) async {
+        var updateCalls = 0;
+        final submittedCategories = <ShoppingCategory?>[];
+
+        final repository = CategoryEditTestRepository(
+          items: [
+            ShoppingItem(
+              id: 7,
+              name: 'Milch',
+              quantity: 3,
+              category: ShoppingCategory.dairy,
+            ),
+          ],
+          onUpdate: (id, name, quantity, category) async {
+            updateCalls++;
+            submittedCategories.add(category);
+
+            if (updateCalls == 1) {
+              throw StateError('Simulated category update failure');
+            }
+
+            return 1;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListPage(repository: repository),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Milch'));
+        await tester.pumpAndSettle();
+
+        final dropdown = find.byType(DropdownButton<ShoppingCategory>);
+
+        await tester.tap(dropdown);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Sonstiges').last);
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.widgetWithText(TextButton, 'Speichern'));
+        await tester.pumpAndSettle();
+
+        expect(updateCalls, 1);
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(
+          find.text('Speichern fehlgeschlagen. Bitte erneut versuchen.'),
+          findsOneWidget,
+        );
+
+        final categoryField =
+        tester.widget<DropdownButton<ShoppingCategory>>(dropdown);
+
+        expect(categoryField.value, ShoppingCategory.other);
+        expect(categoryField.onChanged, isNotNull);
+
+        final tile = tester.widget<ListTile>(find.byType(ListTile));
+        expect(
+          (tile.subtitle as Text).data,
+          'Menge: 3 · Milchprodukte & Eier',
+        );
+
+        await tester.tap(find.widgetWithText(TextButton, 'Speichern'));
+        await tester.pumpAndSettle();
+
+        expect(updateCalls, 2);
+        expect(submittedCategories, [
+          ShoppingCategory.other,
+          ShoppingCategory.other,
+        ]);
+
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.text('Menge: 3 · Sonstiges'), findsOneWidget);
       });
 }

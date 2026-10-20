@@ -1,6 +1,7 @@
 import '../models/shopping_item.dart';
 import '../services/shopping_database.dart';
 import 'package:sqflite/sqflite.dart';
+import '../models/shopping_category.dart';
 
 class ShoppingRepository {
 
@@ -50,6 +51,7 @@ class ShoppingRepository {
     required int id,
     required String name,
     required int quantity,
+    ShoppingCategory? category,
   }) async {
     final trimmedName = name.trim();
 
@@ -72,6 +74,7 @@ class ShoppingRepository {
       {
         'name': trimmedName,
         'quantity': quantity,
+        if (category != null) 'category': category.databaseValue,
       },
       where: 'id = ?',
       whereArgs: [id],

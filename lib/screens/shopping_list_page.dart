@@ -1,3 +1,6 @@
+import '../models/shopping_category.dart';
+import '../widgets/shopping_category_field.dart';
+
 import '../repositories/shopping_repository.dart';
 
 import 'package:flutter/material.dart';
@@ -64,6 +67,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   Future<void> _showAddProductDialog() async {
     String newProduct = '';
     String newQuantity = '1';
+    ShoppingCategory selectedCategory = ShoppingCategory.other;
     String? errorMessage;
     bool isSaving = false;
 
@@ -103,6 +107,17 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                           labelText: 'Menge',
                           hintText: 'z. B. 2',
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      ShoppingCategoryField(
+                        category: selectedCategory,
+                        onChanged: isSaving
+                            ? null
+                            : (value) {
+                          setDialogState(() {
+                            selectedCategory = value;
+                          });
+                        },
                       ),
                       if (errorMessage != null) ...[
                         const SizedBox(height: 12),
@@ -152,6 +167,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                         final item = ShoppingItem(
                           name: name,
                           quantity: quantity,
+                          category: selectedCategory,
                         );
 
                         final id = await _repository.addItem(item);
@@ -162,8 +178,9 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                           _items.add(
                             ShoppingItem(
                               id: id,
-                              name: name,
-                              quantity: quantity,
+                              name: item.name,
+                              quantity: item.quantity,
+                              category: item.category,
                             ),
                           );
                         });
@@ -327,6 +344,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
 
     String editedName = item.name;
     String editedQuantity = item.quantity.toString();
+    ShoppingCategory selectedCategory = item.category;
     String? errorMessage;
     bool isSaving = false;
 
@@ -370,6 +388,17 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                           decoration: const InputDecoration(
                             labelText: 'Menge',
                           ),
+                        ),
+                        const SizedBox(height: 12),
+                        ShoppingCategoryField(
+                          category: selectedCategory,
+                          onChanged: isSaving
+                              ? null
+                              : (value) {
+                            setDialogState(() {
+                              selectedCategory = value;
+                            });
+                          },
                         ),
                         if (errorMessage != null) ...[
                           const SizedBox(height: 12),
@@ -420,6 +449,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                             id: id,
                             name: name,
                             quantity: quantity,
+                            category: selectedCategory,
                           );
 
                           if (updatedRows != 1) {
@@ -440,7 +470,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                                 id: id,
                                 name: name,
                                 quantity: quantity,
-                                category: _items[index].category,
+                                category: selectedCategory,
                                 isBought: _items[index].isBought,
                               );
                             });
@@ -540,7 +570,9 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                     : TextDecoration.none,
               ),
             ),
-            subtitle: Text('Menge: ${item.quantity}'),
+            subtitle: Text(
+              'Menge: ${item.quantity} · ${item.category.label}',
+            ),
             trailing: IconButton(
               icon: const Icon(Icons.delete),
               tooltip: 'Produkt löschen',
