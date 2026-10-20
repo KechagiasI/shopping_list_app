@@ -8,10 +8,14 @@ import '../models/shopping_item.dart';
 
 class ShoppingListPage extends StatefulWidget {
   final ShoppingRepository? repository;
+  final int listId;
+  final String listName;
 
   const ShoppingListPage({
     super.key,
     this.repository,
+    this.listId = 1,
+    this.listName = 'Einkaufsliste',
   });
 
   @override
@@ -31,7 +35,10 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? ShoppingRepository();
+    _repository = widget.repository ??
+        ShoppingRepository(
+          selectedListId: widget.listId,
+        );
     _loadItems();
   }
 
@@ -168,6 +175,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                           name: name,
                           quantity: quantity,
                           category: selectedCategory,
+                          listId: widget.listId,
                         );
 
                         final id = await _repository.addItem(item);
@@ -181,6 +189,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                               name: item.name,
                               quantity: item.quantity,
                               category: item.category,
+                              listId: item.listId,
                             ),
                           );
                         });
@@ -471,6 +480,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
                                 name: name,
                                 quantity: quantity,
                                 category: selectedCategory,
+                                listId: _items[index].listId,
                                 isBought: _items[index].isBought,
                               );
                             });
@@ -517,7 +527,7 @@ class _ShoppingListPageState extends State<ShoppingListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Shopping List'),
+        title: Text(widget.listName),
         backgroundColor: Colors.lightBlue,
       ),
       body: _isLoading

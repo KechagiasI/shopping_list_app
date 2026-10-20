@@ -303,4 +303,100 @@ void main() {
         expect(milk.category, ShoppingCategory.dairy);
         expect(milk.isBought, isTrue);
       });
+
+  test('Editing an item preserves its shopping list', () async {
+    final listId = await db.insert(
+      'shopping_lists',
+      {'name': 'Wocheneinkauf'},
+    );
+
+    expect(listId, isNot(1));
+
+    final itemId = await repository.addItem(
+      ShoppingItem(
+        name: 'Milch',
+        quantity: 2,
+        category: ShoppingCategory.other,
+        listId: listId,
+        isBought: true,
+      ),
+    );
+
+    final updatedRows = await repository.updateItem(
+      id: itemId,
+      name: 'Vollmilch',
+      quantity: 3,
+      category: ShoppingCategory.dairy,
+    );
+
+    expect(updatedRows, 1);
+
+    final rows = await db.query(
+      'shopping_items',
+      where: 'id = ?',
+      whereArgs: [itemId],
+    );
+
+    expect(rows, hasLength(1));
+
+    final savedItem = ShoppingItem.fromMap(rows.single);
+
+    expect(savedItem.id, itemId);
+    expect(savedItem.name, 'Vollmilch');
+    expect(savedItem.quantity, 3);
+    expect(savedItem.category, ShoppingCategory.dairy);
+    expect(savedItem.listId, listId);
+    expect(savedItem.isBought, isTrue);
+  });
+
+  test('Loading items returns only the selected shopping list', () async {
+    final secondListId = await db.insert(
+      'shopping_lists',
+      {'name': 'Wochenende'},
+    );
+
+    final secondRepository = ShoppingRepository(
+      openDatabase: () async => db,
+      selectedListId: secondListId,
+    );
+
+    final milkId = await repository.addItem(
+      ShoppingItem(name: 'Milch'),
+    );
+
+    // The second list must stay empty despite the first list's item.
+    expect(await secondRepository.loadItems(), isEmpty);
+
+    final breadId = await secondRepository.addItem(
+      ShoppingItem(
+        name: 'Brot',
+        listId: secondListId,
+      ),
+    );
+
+    final riceId = await repository.addItem(
+      ShoppingItem(name: 'Reis'),
+    );
+
+    final defaultItems = await repository.loadItems();
+    final secondItems = await secondRepository.loadItems();
+
+    expect(
+      defaultItems.map((item) => item.id).toList(),
+      [milkId, riceId],
+    );
+    expect(
+      defaultItems.map((item) => item.name).toList(),
+      ['Milch', 'Reis'],
+    );
+    expect(
+      defaultItems.every((item) => item.listId == 1),
+      isTrue,
+    );
+
+    expect(secondItems, hasLength(1));
+    expect(secondItems.single.id, breadId);
+    expect(secondItems.single.name, 'Brot');
+    expect(secondItems.single.listId, secondListId);
+  });
 }

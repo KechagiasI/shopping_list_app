@@ -4,18 +4,22 @@ import 'package:sqflite/sqflite.dart';
 import '../models/shopping_category.dart';
 
 class ShoppingRepository {
-
   final Future<Database> Function() _openDatabase;
+  final int _listId;
 
   ShoppingRepository({
     Future<Database> Function()? openDatabase,
-  }) : _openDatabase = openDatabase ?? ShoppingDatabase.open;
+    int selectedListId = 1,
+  })  : _openDatabase = openDatabase ?? ShoppingDatabase.open,
+        _listId = selectedListId;
 
   Future<List<ShoppingItem>> loadItems() async {
     final db = await _openDatabase();
 
     final rows = await db.query(
       'shopping_items',
+      where: 'listId = ?',
+      whereArgs: [_listId],
       orderBy: 'id ASC',
     );
 
@@ -32,6 +36,7 @@ class ShoppingRepository {
       item.toMap(),
     );
   }
+
 
   Future<int> setBought({
     required int id,

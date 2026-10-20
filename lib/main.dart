@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/shopping_list_page.dart';
+import 'screens/shopping_lists_page.dart';
 
 void main() {
   runApp(const ShoppingListApp());
@@ -14,7 +14,7 @@ class ShoppingListApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Shopping List',
-      home: const ShoppingListPage(),
+      home: const ShoppingListsPage(),
     );
   }
 }

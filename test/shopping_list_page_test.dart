@@ -1280,4 +1280,53 @@ void main() {
         expect(find.byType(AlertDialog), findsNothing);
         expect(find.text('Menge: 3 · Sonstiges'), findsOneWidget);
       });
+
+  testWidgets('Adding an item uses the selected shopping list',
+          (tester) async {
+        ShoppingItem? submittedItem;
+        var addCalls = 0;
+
+        final repository = AddTestRepository(
+          onAdd: (item) async {
+            addCalls++;
+            submittedItem = item;
+            return 7;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListPage(
+              repository: repository,
+              listId: 4,
+              listName: 'Wochenende',
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byType(FloatingActionButton));
+        await tester.pumpAndSettle();
+
+        final inputs = find.byType(EditableText);
+
+        await tester.enterText(inputs.at(0), 'Milch');
+        await tester.enterText(inputs.at(1), '3');
+
+        await tester.tap(
+          find.widgetWithText(TextButton, 'Hinzufügen'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(addCalls, 1);
+        expect(submittedItem, isNotNull);
+        expect(submittedItem!.name, 'Milch');
+        expect(submittedItem!.quantity, 3);
+        expect(submittedItem!.listId, 4);
+
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(ListTile), findsOneWidget);
+        expect(find.text('Milch'), findsOneWidget);
+        expect(find.text('Menge: 3 · Sonstiges'), findsOneWidget);
+      });
 }

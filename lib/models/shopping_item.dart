@@ -5,6 +5,7 @@ class ShoppingItem {
   final String name;
   final int quantity;
   final ShoppingCategory category;
+  final int listId;
   bool isBought;
 
   ShoppingItem({
@@ -12,6 +13,7 @@ class ShoppingItem {
     required this.name,
     this.quantity = 1,
     this.category = ShoppingCategory.other,
+    this.listId = 1,
     this.isBought = false,
   });
 
@@ -21,6 +23,7 @@ class ShoppingItem {
       'name': name,
       'quantity': quantity,
       'category': category.databaseValue,
+      'listId': listId,
       'isBought': isBought ? 1 : 0,
     };
   }
@@ -33,6 +36,7 @@ class ShoppingItem {
       category: ShoppingCategory.fromDatabaseValue(
         map['category'] as String?,
       ),
+      listId: map['listId'] as int,
       isBought: map['isBought'] == 1,
     );
   }
