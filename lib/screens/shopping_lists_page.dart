@@ -3,13 +3,16 @@ import 'package:flutter/material.dart';
 import '../models/shopping_list.dart';
 import '../repositories/shopping_list_repository.dart';
 import 'shopping_list_page.dart';
+import '../repositories/shopping_repository.dart';
 
 class ShoppingListsPage extends StatefulWidget {
   final ShoppingListRepository? repository;
+  final ShoppingRepository Function(int listId)? itemRepositoryFactory;
 
   const ShoppingListsPage({
     super.key,
     this.repository,
+    this.itemRepositoryFactory,
   });
 
   @override
@@ -68,6 +71,7 @@ class _ShoppingListsPageState extends State<ShoppingListsPage> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (context) => ShoppingListPage(
+          repository: widget.itemRepositoryFactory?.call(id),
           listId: id,
           listName: list.name,
         ),
@@ -186,6 +190,138 @@ class _ShoppingListsPageState extends State<ShoppingListsPage> {
     );
   }
 
+  Future<void> _showRenameListDialog(ShoppingList list) async {
+    final id = list.id;
+    if (id == null) return;
+
+    String editedName = list.name;
+    String? errorMessage;
+    bool isSaving = false;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return PopScope(
+              canPop: !isSaving,
+              child: AlertDialog(
+                title: const Text('Liste umbenennen'),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        initialValue: list.name,
+                        enabled: !isSaving,
+                        onChanged: (value) {
+                          editedName = value;
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Name der Liste',
+                        ),
+                      ),
+                      if (errorMessage != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          errorMessage!,
+                          style: TextStyle(
+                            color: Theme.of(dialogContext).colorScheme.error,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: isSaving
+                        ? null
+                        : () => Navigator.pop(dialogContext),
+                    child: const Text('Abbrechen'),
+                  ),
+                  TextButton(
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                      if (isSaving) return;
+
+                      final name = editedName.trim();
+
+                      if (name.isEmpty) {
+                        setDialogState(() {
+                          errorMessage =
+                          'Bitte einen Namen eingeben.';
+                        });
+                        return;
+                      }
+
+                      setDialogState(() {
+                        isSaving = true;
+                        errorMessage = null;
+                      });
+
+                      try {
+                        final updatedRows =
+                        await _repository.renameList(
+                          id: id,
+                          name: name,
+                        );
+
+                        if (updatedRows != 1) {
+                          throw StateError(
+                            'Expected to rename one shopping list.',
+                          );
+                        }
+
+                        if (!mounted) return;
+
+                        final index = _lists.indexWhere(
+                              (existingList) => existingList.id == id,
+                        );
+
+                        if (index != -1) {
+                          setState(() {
+                            _lists[index] = ShoppingList(
+                              id: id,
+                              name: name,
+                            );
+                          });
+                        }
+                      } catch (error, stackTrace) {
+                        debugPrint(
+                          'Failed to rename shopping list: $error',
+                        );
+                        debugPrintStack(stackTrace: stackTrace);
+
+                        if (!dialogContext.mounted) return;
+
+                        setDialogState(() {
+                          isSaving = false;
+                          errorMessage =
+                          'Speichern fehlgeschlagen. Bitte erneut versuchen.';
+                        });
+                        return;
+                      }
+
+                      if (dialogContext.mounted) {
+                        Navigator.pop(dialogContext);
+                      }
+                    },
+                    child: Text(
+                      isSaving ? 'Wird gespeichert…' : 'Speichern',
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -236,7 +372,17 @@ class _ShoppingListsPageState extends State<ShoppingListsPage> {
           return ListTile(
             leading: const Icon(Icons.shopping_basket_outlined),
             title: Text(list.name),
-            trailing: const Icon(Icons.chevron_right),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: 'Liste umbenennen',
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () => _showRenameListDialog(list),
+                ),
+                const Icon(Icons.chevron_right),
+              ],
+            ),
             onTap: () => _openList(list),
           );
         },

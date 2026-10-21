@@ -41,4 +41,28 @@ class ShoppingListRepository {
       ShoppingList(name: trimmedName).toMap(),
     );
   }
+
+  Future<int> renameList({
+    required int id,
+    required String name,
+  }) async {
+    final trimmedName = name.trim();
+
+    if (trimmedName.isEmpty) {
+      throw ArgumentError.value(
+        name,
+        'name',
+        'Must not be empty.',
+      );
+    }
+
+    final db = await _openDatabase();
+
+    return db.update(
+      'shopping_lists',
+      {'name': trimmedName},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
 }
