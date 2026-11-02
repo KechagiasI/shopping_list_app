@@ -65,4 +65,22 @@ class ShoppingListRepository {
       whereArgs: [id],
     );
   }
+
+  Future<int> deleteList(int id) async {
+    final db = await _openDatabase();
+
+    return db.transaction((txn) async {
+      await txn.delete(
+        'shopping_items',
+        where: 'listId = ?',
+        whereArgs: [id],
+      );
+
+      return txn.delete(
+        'shopping_lists',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
+  }
 }

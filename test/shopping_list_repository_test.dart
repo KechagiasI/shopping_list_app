@@ -169,4 +169,196 @@ void main() {
 
         expect(listsAfter, listsBefore);
       });
+
+  test('Deleting a list removes only that list and its items', () async {
+    final listId = await repository.addList('Wochenende');
+
+    await db.insert(
+      'shopping_items',
+      {
+        'name': 'Milch',
+        'quantity': 3,
+        'category': 'dairy',
+        'isBought': 1,
+        'listId': 1,
+      },
+    );
+
+    final originalItems = await db.query(
+      'shopping_items',
+      where: 'listId = ?',
+      whereArgs: [1],
+    );
+
+    await db.insert(
+      'shopping_items',
+      {
+        'name': 'Brot',
+        'listId': listId,
+      },
+    );
+
+    await db.insert(
+      'shopping_items',
+      {
+        'name': 'Reis',
+        'listId': listId,
+      },
+    );
+
+    final deletedRows = await repository.deleteList(listId);
+
+    // The result counts deleted lists, not deleted products.
+    expect(deletedRows, 1);
+
+    final lists = await repository.loadLists();
+
+    expect(lists, hasLength(1));
+    expect(lists.single.id, 1);
+    expect(lists.single.name, 'Einkaufsliste');
+
+    final remainingItems = await db.query('shopping_items');
+
+    expect(remainingItems, originalItems);
+    expect(
+      await db.rawQuery('PRAGMA foreign_key_check'),
+      isEmpty,
+    );
+  });
+
+  test('The default list can be deleted and a new list created afterward',
+          () async {
+        await db.insert(
+          'shopping_items',
+          {
+            'name': 'Milch',
+            'listId': 1,
+          },
+        );
+
+        expect(await repository.deleteList(1), 1);
+        expect(await repository.loadLists(), isEmpty);
+        expect(await db.query('shopping_items'), isEmpty);
+
+        final newListId = await repository.addList('Neue Einkäufe');
+
+        expect(newListId, greaterThan(1));
+
+        final lists = await repository.loadLists();
+
+        expect(lists, hasLength(1));
+        expect(lists.single.id, newListId);
+        expect(lists.single.name, 'Neue Einkäufe');
+
+        final itemId = await db.insert(
+          'shopping_items',
+          {
+            'name': 'Brot',
+            'listId': newListId,
+          },
+        );
+
+        final items = await db.query('shopping_items');
+
+        expect(items, hasLength(1));
+        expect(items.single['id'], itemId);
+        expect(items.single['name'], 'Brot');
+        expect(items.single['listId'], newListId);
+
+        expect(
+          await db.rawQuery('PRAGMA foreign_key_check'),
+          isEmpty,
+        );
+      });
+
+  test('Failed list deletion rolls back the deletion of its items',
+          () async {
+        final listId = await repository.addList('Wochenende');
+
+        await db.insert(
+          'shopping_items',
+          {
+            'name': 'Milch',
+            'quantity': 3,
+            'category': 'dairy',
+            'isBought': 1,
+            'listId': listId,
+          },
+        );
+
+        final listsBefore = await db.query(
+          'shopping_lists',
+          orderBy: 'id ASC',
+        );
+        final itemsBefore = await db.query(
+          'shopping_items',
+          orderBy: 'id ASC',
+        );
+
+        // Force the list deletion to fail after its items were deleted.
+        await db.execute('''
+      CREATE TRIGGER reject_list_deletion
+      BEFORE DELETE ON shopping_lists
+      BEGIN
+        SELECT RAISE(ABORT, 'Simulated list deletion failure');
+      END
+    ''');
+
+        await expectLater(
+          repository.deleteList(listId),
+          throwsA(isA<DatabaseException>()),
+        );
+
+        expect(
+          await db.query('shopping_lists', orderBy: 'id ASC'),
+          listsBefore,
+        );
+        expect(
+          await db.query('shopping_items', orderBy: 'id ASC'),
+          itemsBefore,
+        );
+
+        await db.execute('DROP TRIGGER reject_list_deletion');
+
+        expect(await repository.deleteList(listId), 1);
+        expect(await db.query('shopping_items'), isEmpty);
+
+        final remainingLists = await repository.loadLists();
+
+        expect(remainingLists, hasLength(1));
+        expect(remainingLists.single.id, 1);
+      });
+
+  test('Deleting a missing list returns zero and preserves existing data',
+          () async {
+        final listId = await repository.addList('Wochenende');
+
+        await db.insert(
+          'shopping_items',
+          {
+            'name': 'Milch',
+            'listId': listId,
+          },
+        );
+
+        final listsBefore = await db.query(
+          'shopping_lists',
+          orderBy: 'id ASC',
+        );
+        final itemsBefore = await db.query(
+          'shopping_items',
+          orderBy: 'id ASC',
+        );
+
+        expect(await repository.deleteList(999), 0);
+
+        expect(
+          await db.query('shopping_lists', orderBy: 'id ASC'),
+          listsBefore,
+        );
+        expect(
+          await db.query('shopping_items', orderBy: 'id ASC'),
+          itemsBefore,
+        );
+      });
 }

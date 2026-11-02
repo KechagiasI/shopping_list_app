@@ -23,6 +23,7 @@ class _ShoppingListsPageState extends State<ShoppingListsPage> {
   late final ShoppingListRepository _repository;
 
   final List<ShoppingList> _lists = [];
+  final Set<int> _deletingListIds = {};
   bool _isLoading = true;
   String? _loadError;
 
@@ -322,6 +323,74 @@ class _ShoppingListsPageState extends State<ShoppingListsPage> {
     );
   }
 
+  Future<void> _deleteList(ShoppingList list) async {
+    final id = list.id;
+
+    if (id == null || _deletingListIds.contains(id)) return;
+
+    setState(() {
+      _deletingListIds.add(id);
+    });
+
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Liste löschen'),
+            content: Text(
+              'Die Liste „${list.name}“ und alle ihre Produkte '
+                  'werden dauerhaft gelöscht. Fortfahren?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Abbrechen'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Löschen'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (confirmed != true || !mounted) return;
+
+      final deletedRows = await _repository.deleteList(id);
+
+      if (deletedRows != 1) {
+        throw StateError('Expected to delete one shopping list.');
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _lists.removeWhere((existingList) => existingList.id == id);
+      });
+    } catch (error, stackTrace) {
+      debugPrint('Failed to delete shopping list: $error');
+      debugPrintStack(stackTrace: stackTrace);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Löschen fehlgeschlagen. Bitte erneut versuchen.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _deletingListIds.remove(id);
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -378,12 +447,23 @@ class _ShoppingListsPageState extends State<ShoppingListsPage> {
                 IconButton(
                   tooltip: 'Liste umbenennen',
                   icon: const Icon(Icons.edit_outlined),
-                  onPressed: () => _showRenameListDialog(list),
+                  onPressed: _deletingListIds.contains(list.id)
+                      ? null
+                      : () => _showRenameListDialog(list),
+                ),
+                IconButton(
+                  tooltip: 'Liste löschen',
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: _deletingListIds.contains(list.id)
+                      ? null
+                      : () => _deleteList(list),
                 ),
                 const Icon(Icons.chevron_right),
               ],
             ),
-            onTap: () => _openList(list),
+            onTap: _deletingListIds.contains(list.id)
+                ? null
+                : () => _openList(list),
           );
         },
       ),

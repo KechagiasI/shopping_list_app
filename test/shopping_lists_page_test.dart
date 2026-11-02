@@ -29,6 +29,11 @@ class ListsTestRepository implements ShoppingListRepository {
   }) {
     throw UnsupportedError('Not used in loading tests.');
   }
+
+  @override
+  Future<int> deleteList(int id) {
+    throw UnsupportedError('Not used in loading tests.');
+  }
 }
 
 class AddListTestRepository extends ListsTestRepository {
@@ -70,6 +75,18 @@ class RenameListTestRepository extends ListsTestRepository {
   }) {
     return onRename(id, name);
   }
+}
+
+class DeleteListTestRepository extends ListsTestRepository {
+  final Future<int> Function(int id) onDelete;
+
+  DeleteListTestRepository({
+    required List<ShoppingList> lists,
+    required this.onDelete,
+  }) : super(onLoad: () async => lists);
+
+  @override
+  Future<int> deleteList(int id) => onDelete(id);
 }
 
 void main() {
@@ -992,5 +1009,309 @@ void main() {
         expect(find.byType(ListTile), findsOneWidget);
         expect(find.text('Wocheneinkauf'), findsOneWidget);
         expect(find.text('Wochenende'), findsNothing);
+      });
+
+  testWidgets('Confirmed deletion removes only the selected list',
+          (tester) async {
+        final deletedIds = <int>[];
+
+        final repository = DeleteListTestRepository(
+          lists: [
+            ShoppingList(id: 1, name: 'Einkaufsliste'),
+            ShoppingList(id: 4, name: 'Wochenende'),
+          ],
+          onDelete: (id) async {
+            deletedIds.add(id);
+            return 1;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListsPage(repository: repository),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final selectedTile = find.widgetWithText(
+          ListTile,
+          'Wochenende',
+        );
+
+        final deleteButton = find.descendant(
+          of: selectedTile,
+          matching: find.byWidgetPredicate(
+                (widget) =>
+            widget is IconButton &&
+                widget.tooltip == 'Liste löschen',
+          ),
+        );
+
+        await tester.tap(deleteButton);
+        await tester.pumpAndSettle();
+
+        expect(deletedIds, isEmpty);
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(
+          find.text(
+            'Die Liste „Wochenende“ und alle ihre Produkte '
+                'werden dauerhaft gelöscht. Fortfahren?',
+          ),
+          findsOneWidget,
+        );
+
+        await tester.tap(
+          find.widgetWithText(TextButton, 'Löschen'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(deletedIds, [4]);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(ListTile), findsOneWidget);
+        expect(find.text('Einkaufsliste'), findsOneWidget);
+        expect(find.text('Wochenende'), findsNothing);
+      });
+
+  testWidgets('Cancelling list deletion preserves the list and its controls',
+          (tester) async {
+        var deleteCalls = 0;
+
+        final repository = DeleteListTestRepository(
+          lists: [
+            ShoppingList(id: 4, name: 'Wochenende'),
+          ],
+          onDelete: (id) async {
+            deleteCalls++;
+            return 1;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListsPage(repository: repository),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final deleteButton = find.byWidgetPredicate(
+              (widget) =>
+          widget is IconButton &&
+              widget.tooltip == 'Liste löschen',
+        );
+
+        final renameButton = find.byWidgetPredicate(
+              (widget) =>
+          widget is IconButton &&
+              widget.tooltip == 'Liste umbenennen',
+        );
+
+        await tester.tap(deleteButton);
+        await tester.pumpAndSettle();
+
+        expect(deleteCalls, 0);
+        expect(find.byType(AlertDialog), findsOneWidget);
+
+        await tester.tap(
+          find.widgetWithText(TextButton, 'Abbrechen'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(deleteCalls, 0);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(ListTile), findsOneWidget);
+        expect(find.text('Wochenende'), findsOneWidget);
+
+        expect(
+          tester.widget<IconButton>(deleteButton).onPressed,
+          isNotNull,
+        );
+        expect(
+          tester.widget<IconButton>(renameButton).onPressed,
+          isNotNull,
+        );
+        expect(
+          tester.widget<ListTile>(find.byType(ListTile)).onTap,
+          isNotNull,
+        );
+
+        // A new deletion attempt must still open the confirmation.
+        await tester.tap(deleteButton);
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AlertDialog), findsOneWidget);
+
+        await tester.tap(
+          find.widgetWithText(TextButton, 'Abbrechen'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(deleteCalls, 0);
+        expect(find.byType(AlertDialog), findsNothing);
+      });
+
+  testWidgets('Failed list deletion preserves the list and allows retry',
+          (tester) async {
+        final deletedIds = <int>[];
+
+        final repository = DeleteListTestRepository(
+          lists: [
+            ShoppingList(id: 4, name: 'Wochenende'),
+          ],
+          onDelete: (id) async {
+            deletedIds.add(id);
+
+            if (deletedIds.length == 1) {
+              throw StateError('Simulated list deletion failure');
+            }
+
+            return 1;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListsPage(repository: repository),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final deleteButton = find.byWidgetPredicate(
+              (widget) =>
+          widget is IconButton &&
+              widget.tooltip == 'Liste löschen',
+        );
+
+        await tester.tap(deleteButton);
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.widgetWithText(TextButton, 'Löschen'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(deletedIds, [4]);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(ListTile), findsOneWidget);
+        expect(find.text('Wochenende'), findsOneWidget);
+        expect(
+          find.text('Löschen fehlgeschlagen. Bitte erneut versuchen.'),
+          findsOneWidget,
+        );
+        expect(
+          tester.widget<IconButton>(deleteButton).onPressed,
+          isNotNull,
+        );
+
+        await tester.tap(deleteButton);
+        await tester.pumpAndSettle();
+
+        // Reopening the confirmation must not delete anything yet.
+        expect(deletedIds, [4]);
+
+        await tester.tap(
+          find.widgetWithText(TextButton, 'Löschen'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(deletedIds, [4, 4]);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.byType(ListTile), findsNothing);
+        expect(
+          find.text('Noch keine Einkaufslisten vorhanden.'),
+          findsOneWidget,
+        );
+        expect(
+          tester
+              .widget<FloatingActionButton>(
+            find.byType(FloatingActionButton),
+          )
+              .onPressed,
+          isNotNull,
+        );
+      });
+
+  testWidgets('Pending list deletion disables controls until completion',
+          (tester) async {
+        final pendingDelete = Completer<int>();
+        var deleteCalls = 0;
+
+        final repository = DeleteListTestRepository(
+          lists: [
+            ShoppingList(id: 4, name: 'Wochenende'),
+          ],
+          onDelete: (id) {
+            deleteCalls++;
+            return pendingDelete.future;
+          },
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShoppingListsPage(repository: repository),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final deleteButton = find.byWidgetPredicate(
+              (widget) =>
+          widget is IconButton &&
+              widget.tooltip == 'Liste löschen',
+        );
+
+        final renameButton = find.byWidgetPredicate(
+              (widget) =>
+          widget is IconButton &&
+              widget.tooltip == 'Liste umbenennen',
+        );
+
+        await tester.tap(deleteButton);
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.widgetWithText(TextButton, 'Löschen'),
+        );
+        await tester.pumpAndSettle();
+
+        expect(deleteCalls, 1);
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.text('Wochenende'), findsOneWidget);
+        expect(find.byType(ListTile), findsOneWidget);
+
+        expect(
+          tester.widget<IconButton>(deleteButton).onPressed,
+          isNull,
+        );
+        expect(
+          tester.widget<IconButton>(renameButton).onPressed,
+          isNull,
+        );
+        expect(
+          tester.widget<ListTile>(find.byType(ListTile)).onTap,
+          isNull,
+        );
+
+        await tester.tap(deleteButton);
+        await tester.pump();
+
+        expect(deleteCalls, 1);
+        expect(find.byType(AlertDialog), findsNothing);
+
+        pendingDelete.complete(1);
+        await tester.pumpAndSettle();
+
+        expect(deleteCalls, 1);
+        expect(find.byType(ListTile), findsNothing);
+        expect(
+          find.text('Noch keine Einkaufslisten vorhanden.'),
+          findsOneWidget,
+        );
+        expect(
+          tester
+              .widget<FloatingActionButton>(
+            find.byType(FloatingActionButton),
+          )
+              .onPressed,
+          isNotNull,
+        );
       });
 }
