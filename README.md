@@ -1,73 +1,66 @@
 # Shopping List App
 
-Εφαρμογή λίστας αγορών με Flutter και Dart, με τοπική
-αποθήκευση δεδομένων σε SQLite.
+Eine Einkaufslisten-App mit Flutter und Dart und lokaler Datenspeicherung in SQLite.
 
-Στόχος είναι να βοηθά τον χρήστη να οργανώνει τα ψώνια του
-και, σε επόμενα στάδια, να συγκρίνει τιμές supermarket
-και να μειώνει το συνολικό κόστος αγορών.
+Die App hilft dabei, Einkäufe zu organisieren. In späteren Entwicklungsphasen soll sie Supermarktpreise vergleichen und dabei helfen, die Gesamtkosten des Einkaufs zu senken.
 
-## Τρέχουσες λειτουργίες
+## Aktuelle Funktionen
 
-- Προσθήκη προϊόντος με όνομα και θετική ακέραιη ποσότητα.
-- Έλεγχος μη έγκυρων στοιχείων πριν από την προσθήκη.
-- Επισήμανση προϊόντος ως αγορασμένου.
-- Διαγραφή προϊόντος με επιβεβαίωση.
-- Τοπική αποθήκευση και φόρτωση μέσω SQLite.
-- Ένδειξη φόρτωσης και επανάληψη μετά από αποτυχία φόρτωσης.
-- Μηνύματα σε περίπτωση αποτυχίας αποθήκευσης ή διαγραφής.
-- Προστασία από επαναλαμβανόμενες ενέργειες όσο εκκρεμεί
-  η αποθήκευση του ίδιου προϊόντος.
-- Επεξεργασία ονόματος και ποσότητας με πάτημα στο προϊόν.
-- Διατήρηση της κατάστασης αγοράς κατά την επεξεργασία.
-- Ακύρωση επεξεργασίας χωρίς αλλαγή του προϊόντος.
-- Διατήρηση της εισόδου μετά από αποτυχία αποθήκευσης.
-- Προστασία από επαναλαμβανόμενα πατήματα αποθήκευσης.
-- Επιλογή κατηγορίας κατά την προσθήκη και την επεξεργασία προϊόντος.
-- Εμφάνιση της κατηγορίας δίπλα στην ποσότητα στη λίστα.
+### Produkte verwalten
 
-Η εφαρμογή υποστηρίζει πολλαπλές λίστες αγορών:
+- Produkte mit Namen und einer positiven, ganzzahligen Menge hinzufügen.
+- Eingaben vor dem Hinzufügen auf Gültigkeit prüfen.
+- Produkte als gekauft markieren und die Markierung wieder entfernen.
+- Produkte nach Bestätigung löschen.
+- Namen und Menge durch Antippen eines Produkts bearbeiten.
+- Den Kaufstatus beim Bearbeiten beibehalten.
+- Die Bearbeitung ohne Änderungen abbrechen.
+- Beim Hinzufügen und Bearbeiten eine Kategorie auswählen.
+- Die Kategorie neben der Menge anzeigen.
+- Daten lokal über SQLite speichern und laden.
+- Ladezustände und Fehlermeldungen anzeigen sowie fehlgeschlagene Vorgänge erneut versuchen.
+- Eingaben nach einem fehlgeschlagenen Speichervorgang beibehalten.
+- Wiederholte Aktionen für dasselbe Produkt während des Speicherns sperren und mehrfaches Speichern verhindern.
 
-- Αρχική οθόνη με τις αποθηκευμένες λίστες.
-- Δημιουργία νέας λίστας με έλεγχο μη κενού ονόματος.
-- Ακύρωση δημιουργίας και επανάληψη μετά από αποτυχία αποθήκευσης.
-- Προστασία από διπλή υποβολή κατά τη δημιουργία λίστας.
-- Άνοιγμα κάθε λίστας με το όνομά της στον τίτλο.
-- Ξεχωριστή φόρτωση και προσθήκη προϊόντων ανά λίστα.
-- Διατήρηση λιστών και προϊόντων μετά την επανεκκίνηση.
+Die Menge bezeichnet eine ganzzahlige Anzahl von Stück oder Packungen. Dezimalmengen und Einheiten wie kg oder L werden derzeit nicht unterstützt.
 
-Τα προϋπάρχοντα προϊόντα ανήκουν στην αρχική λίστα `Einkaufsliste`.
-Υποστηρίζεται μετονομασία λίστας από το κουμπί με το μολύβι:
+Die Standardkategorie ist `other` (Sonstiges). Die Auswahl wird in SQLite gespeichert und bleibt nach einem Neustart erhalten.
 
-- Εμφάνιση του υπάρχοντος ονόματος στο παράθυρο.
-- Έλεγχος μη κενού ονόματος και αφαίρεση περιττών κενών στις άκρες.
-- Ακύρωση χωρίς αλλαγή του ονόματος.
-- Διατήρηση της εισόδου και νέα προσπάθεια μετά από αποτυχία.
-- Προστασία από επαναλαμβανόμενα πατήματα αποθήκευσης.
-- Διατήρηση του ID της λίστας και των προϊόντων της.
+### Mehrere Einkaufslisten
 
-Υποστηρίζεται διαγραφή κάθε λίστας, ακόμη και της αρχικής, με επιβεβαίωση.
-Διαγράφονται και όλα τα προϊόντα της στην ίδια συναλλαγή. Σε αποτυχία
-διατηρούνται τα δεδομένα και επιτρέπεται νέα προσπάθεια. Όσο εκκρεμεί
-η διαγραφή, απενεργοποιούνται οι ενέργειες της συγκεκριμένης λίστας.
-Μπορούν να διαγραφούν όλες οι λίστες και να δημιουργηθεί νέα από το +.
+- Startseite mit den gespeicherten Listen.
+- Neue Listen anlegen und leere Namen zurückweisen.
+- Das Anlegen abbrechen oder nach einem Speicherfehler erneut versuchen.
+- Doppelte Einträge durch wiederholtes Absenden beim Anlegen verhindern.
+- Jede Liste mit ihrem Namen als Seitentitel öffnen.
+- Produkte getrennt nach Liste laden und hinzufügen.
+- Listen und Produkte nach einem Neustart beibehalten.
 
-Η ποσότητα εκφράζει ακέραια τεμάχια ή συσκευασίες,
-όχι δεκαδικές ποσότητες ή μονάδες όπως kg και L.
+Bei der Migration bestehender Daten werden vorhandene Produkte der ursprünglichen Liste `Einkaufsliste` zugeordnet.
 
-Η διεπαφή είναι προς το παρόν στα γερμανικά.
+Listen lassen sich über die Schaltfläche mit dem Stiftsymbol umbenennen:
 
-Η προεπιλεγμένη κατηγορία είναι `other` (Sonstiges).
-Η επιλογή αποθηκεύεται στη SQLite και διατηρείται μετά την επανεκκίνηση.
+- Den bestehenden Namen im Dialog anzeigen.
+- Leere Namen zurückweisen und Leerzeichen am Anfang und Ende entfernen.
+- Ohne Namensänderung abbrechen.
+- Eingaben nach einem Fehler beibehalten und einen erneuten Versuch ermöglichen.
+- Mehrfaches Speichern durch wiederholtes Antippen verhindern.
+- Die ID der Liste und ihre Produkte beibehalten.
 
-## Τεχνολογίες
+Jede Liste, auch die ursprüngliche, kann nach Bestätigung gelöscht werden. Dabei werden alle zugehörigen Produkte innerhalb derselben Transaktion gelöscht. Bei einem Fehler bleiben die Daten erhalten und der Vorgang kann erneut versucht werden. Während des Löschvorgangs sind die Aktionen der betroffenen Liste gesperrt.
+
+Auch alle Listen können gelöscht werden; über **+** lässt sich anschließend eine neue Liste anlegen.
+
+Die Benutzeroberfläche ist derzeit auf Deutsch.
+
+## Technologien
 
 - Flutter / Dart
-- SQLite μέσω του package `sqflite`
-- `path` για τη διαδρομή του αρχείου βάσης
-- `flutter_test` για αυτοματοποιημένους ελέγχους
+- SQLite über das Paket `sqflite`
+- `path` für den Pfad zur Datenbankdatei
+- `flutter_test` für automatisierte Tests
 
-## Δομή κώδικα
+## Projektstruktur
 
 ```text
 lib/
@@ -97,97 +90,79 @@ test/
 └── shopping_lists_page_test.dart
 ```
 
-- `main.dart`: εκκίνηση και βασική ρύθμιση της εφαρμογής.
-- `shopping_item.dart`: μοντέλο προϊόντος με `listId` και μετατροπές Map.
-- `shopping_list.dart`: μοντέλο λίστας με ID και όνομα.
-- `shopping_list_repository.dart`: ανάγνωση, δημιουργία, μετονομασία και συναλλακτική διαγραφή λιστών.
-- `shopping_lists_page.dart`: αρχική οθόνη επιλογής, δημιουργίας, μετονομασίας και διαγραφής λίστας.
-- `shopping_category.dart`: κατηγορίες με σταθερούς κωδικούς βάσης
-  και γερμανικές ετικέτες εμφάνισης.
-- `shopping_repository.dart`: φόρτωση προϊόντων ανά επιλεγμένη λίστα, προσθήκη,
-  επεξεργασία ονόματος, ποσότητας και κατηγορίας, ενημέρωση κατάστασης αγοράς
-  και διαγραφή στη βάση.
-- `shopping_list_page.dart`: οθόνη, παράθυρα και κατάσταση UI.
-- `shopping_database.dart`: άνοιγμα, δημιουργία και
-  αναβάθμιση της βάσης.
-- `shopping_category_field.dart`: κοινό πεδίο επιλογής κατηγορίας
-  για προσθήκη και επεξεργασία, που απενεργοποιείται κατά την αποθήκευση.
+- `main.dart`: Start und grundlegende Konfiguration der App.
+- `shopping_item.dart`: Produktmodell mit `listId` und Konvertierung in und aus Maps.
+- `shopping_list.dart`: Listenmodell mit ID und Namen.
+- `shopping_list_repository.dart`: Listen lesen, anlegen, umbenennen und innerhalb einer Transaktion löschen.
+- `shopping_lists_page.dart`: Startseite zum Auswählen, Anlegen, Umbenennen und Löschen von Listen.
+- `shopping_category.dart`: Kategorien mit festen Datenbankcodes und deutschen Anzeigebezeichnungen.
+- `shopping_repository.dart`: Produkte der ausgewählten Liste laden und hinzufügen, Namen, Menge und Kategorie bearbeiten, den Kaufstatus aktualisieren und Produkte löschen.
+- `shopping_list_page.dart`: Produktansicht, Dialoge und Zustand der Benutzeroberfläche.
+- `shopping_database.dart`: Datenbank öffnen, erstellen und migrieren.
+- `shopping_category_field.dart`: Gemeinsames Kategorieauswahlfeld für das Hinzufügen und Bearbeiten; während des Speicherns deaktiviert.
 
-Η οθόνη χρησιμοποιεί το repository για την πρόσβαση στα δεδομένα.
+Die Ansichten greifen über Repositories auf die Daten zu.
 
-## Τοπική βάση δεδομένων
+## Lokale Datenbank
 
-Αρχείο βάσης: `shopping_list.db`
+Datenbankdatei: `shopping_list.db`
 
-Τρέχουσα έκδοση σχήματος: `4`
+Aktuelle Schemaversion: `4`
 
-Ο πίνακας `shopping_lists` περιέχει `id` και `name`.
-Κατά τη δημιουργία της βάσης προστίθεται η `Einkaufsliste` με ID `1`.
-Μπορεί να μετονομαστεί ή να διαγραφεί όπως κάθε άλλη λίστα.
+Die Tabelle `shopping_lists` enthält `id` und `name`. Beim Erstellen der Datenbank wird die Liste `Einkaufsliste` mit der ID `1` angelegt. Sie kann wie jede andere Liste umbenannt oder gelöscht werden.
 
-Ο πίνακας `shopping_items` περιλαμβάνει:
+Die Tabelle `shopping_items` enthält:
 
-| Πεδίο | Περιγραφή |
+| Feld | Beschreibung |
 | --- | --- |
-| `id` | Μοναδικό αναγνωριστικό |
-| `name` | Όνομα προϊόντος |
-| `quantity` | Ακέραιη ποσότητα |
-| `category` | Κωδικός κατηγορίας, με προεπιλογή `other` |
-| `isBought` | Κατάσταση αγοράς: 0 ή 1 |
-| `listId` | Λίστα του προϊόντος, με προεπιλογή `1` |
+| `id` | Eindeutige Kennung |
+| `name` | Produktname |
+| `quantity` | Ganzzahlige Menge |
+| `category` | Kategoriecode, Standardwert `other` |
+| `isBought` | Kaufstatus: 0 oder 1 |
+| `listId` | Zugehörige Liste des Produkts, Standardwert `1` |
 
-Η αναβάθμιση από την έκδοση 1 στην έκδοση 2 προσθέτει
-την ποσότητα με προεπιλεγμένη τιμή 1, διατηρώντας
-τις υπάρχουσες εγγραφές.
+Die Migration von Version 1 auf Version 2 ergänzt die Menge mit dem Standardwert 1. Bestehende Datensätze bleiben erhalten.
 
-Η αναβάθμιση από την έκδοση 2 στην έκδοση 3 προσθέτει
-την κατηγορία με προεπιλογή `other`, διατηρώντας τα υπόλοιπα πεδία.
-Η έκδοση 4 προσθέτει τις λίστες και τη σύνδεση των προϊόντων μέσω `listId`.
-Υποστηρίζονται αναβαθμίσεις από τις εκδόσεις 1, 2 και 3 στην έκδοση 4.
-Τα υπάρχοντα προϊόντα μεταφέρονται στην αρχική λίστα με διατήρηση των
-στοιχείων τους και της ακολουθίας αναγνωριστικών AUTOINCREMENT.
+Die Migration von Version 2 auf Version 3 ergänzt die Kategorie mit dem Standardwert `other`. Die übrigen Felder bleiben erhalten.
 
-Το foreign key απορρίπτει προϊόντα που αναφέρονται σε ανύπαρκτη λίστα.
-Υπάρχει index στο `shopping_items.listId` για τη φόρτωση ανά λίστα.
+Version 4 ergänzt die Listen und verknüpft Produkte über `listId` mit ihrer Liste. Migrationen von Version 1, 2 und 3 auf Version 4 werden unterstützt. Vorhandene Produkte werden der ursprünglichen Liste zugeordnet. Ihre Daten und die AUTOINCREMENT-Sequenz der IDs bleiben erhalten.
 
-Τα δεδομένα αποθηκεύονται τοπικά στη συσκευή.
-Δεν υπάρχει συγχρονισμός ή cloud backup.
+Der Fremdschlüssel verhindert das Speichern von Produkten mit einer nicht vorhandenen Liste. Ein Index auf `shopping_items.listId` unterstützt das Laden der Produkte einer Liste.
 
-## Εκτέλεση για ανάπτυξη
+Die Daten werden lokal auf dem Gerät gespeichert. Es gibt keine Synchronisierung und kein Cloud-Backup.
 
-Η εφαρμογή αναπτύσσεται και ελέγχεται προς το παρόν σε Android.
+## App in der Entwicklungsumgebung starten
 
-Απαιτούνται Flutter SDK συμβατό με το `pubspec.yaml`,
-Android SDK και συνδεδεμένη Android συσκευή ή emulator.
+Die App wird derzeit für Android entwickelt und getestet.
 
-Από τον φάκελο του project:
+Benötigt werden ein mit `pubspec.yaml` kompatibles Flutter SDK, das Android SDK und ein verbundenes Android-Gerät oder ein Emulator.
+
+Im Projektverzeichnis ausführen:
 
 ```powershell
 flutter pub get
 flutter devices
 ```
 
-Εκτέλεση στην επιθυμητή Android συσκευή,
-αντικαθιστώντας το `<device-id>` με το ID της:
+Die App auf dem gewünschten Android-Gerät starten. Dazu `<device-id>` durch dessen Geräte-ID ersetzen:
 
 ```powershell
 flutter run -d <device-id>
 ```
 
-Η παρουσία φακέλων για άλλες πλατφόρμες δεν σημαίνει
-ότι έχει επαληθευτεί η λειτουργία της εφαρμογής σε αυτές.
+Die vorhandenen Projektordner für andere Plattformen bedeuten nicht, dass die Funktionsfähigkeit auf diesen Plattformen bereits geprüft wurde.
 
-## Έλεγχοι
+## Tests und Codeanalyse
 
 ```powershell
 flutter analyze
 flutter test
 ```
 
-Υπάρχουν συνολικά **72 tests**: 8 μοντέλων, 5 βάσης,
-23 repositories και 36 οθονών.
+Es gibt insgesamt **72 Tests**: 8 Modelltests, 5 Datenbanktests, 23 Repository-Tests und 36 Widget-Tests der Ansichten.
 
-| Αρχείο | Tests |
+| Datei | Tests |
 | --- | ---: |
 | shopping_item_test.dart | 5 |
 | shopping_list_test.dart | 3 |
@@ -196,134 +171,129 @@ flutter test
 | shopping_list_repository_test.dart | 11 |
 | shopping_list_page_test.dart | 18 |
 | shopping_lists_page_test.dart | 18 |
-| **Σύνολο** | **72** |
+| **Gesamt** | **72** |
 
-Οι έλεγχοι μοντέλου, βάσης και βασικών ενεργειών repository καλύπτουν:
+### Modelle, Datenbank und grundlegende Repository-Funktionen
 
-- Προεπιλεγμένες τιμές και μετατροπές Map του `ShoppingItem`.
-- Προεπιλεγμένη κατηγορία και μετατροπή κωδικού κατηγορίας προς και από Map.
-- Δημιουργία βάσης έκδοσης 4 και προεπιλεγμένες τιμές στη SQLite.
-- Αναβαθμίσεις από εκδόσεις 1, 2 και 3 σε 4 με διατήρηση προϊόντων,
-  σύνδεση στην αρχική λίστα και διατήρηση της ακολουθίας IDs.
-- Απόρριψη προϊόντος που αναφέρεται σε ανύπαρκτη λίστα.
-- Ανάγνωση άδειας λίστας.
-- Προσθήκη και ανάκτηση προϊόντων με σειρά εισαγωγής.
-- Αλλαγή κατάστασης αγοράς μόνο στο επιλεγμένο προϊόν.
-- Διαγραφή μόνο του επιλεγμένου προϊόντος.
-- Μηδενικό αριθμό επηρεασμένων εγγραφών για ανύπαρκτο ID.
-- Μεταφορά σφαλμάτων ανοίγματος βάσης στον καλούντα κώδικα.
+Die Tests prüfen:
 
-Τα αρχικά 8 widget tests της οθόνης καλύπτουν:
+- Standardwerte und Map-Konvertierungen von `ShoppingItem`.
+- Die Standardkategorie und die Konvertierung des Kategoriecodes in und aus Maps.
+- Das Erstellen einer Datenbank mit Version 4 und die SQLite-Standardwerte.
+- Migrationen von Version 1, 2 und 3 auf Version 4 unter Beibehaltung der Produkte, ihrer Zuordnung zur ursprünglichen Liste und der ID-Sequenz.
+- Das Zurückweisen von Produkten mit einer nicht vorhandenen Liste.
+- Das Lesen einer leeren Liste.
+- Das Hinzufügen und Abrufen von Produkten in Einfügereihenfolge.
+- Das Ändern des Kaufstatus ausschließlich beim ausgewählten Produkt.
+- Das Löschen ausschließlich des ausgewählten Produkts.
+- Null betroffene Datensätze bei einer nicht vorhandenen ID.
+- Die Weitergabe von Fehlern beim Öffnen der Datenbank an den aufrufenden Code.
 
-- Ένδειξη φόρτωσης και απενεργοποίηση προσθήκης μέχρι να φορτωθούν τα δεδομένα.
-- Εμφάνιση άδειας λίστας.
-- Αποτυχία φόρτωσης και επιτυχημένη επανάληψη.
-- Αποτυχία προσθήκης, διατήρηση εισόδου και νέα προσπάθεια.
-- Αποτροπή διπλής εγγραφής από επαναλαμβανόμενα πατήματα προσθήκης.
-- Αποτυχία ενημέρωσης checkbox και επιτυχημένη επανάληψη.
-- Αποτυχία διαγραφής και επιτυχημένη επανάληψη.
-- Ακύρωση διαγραφής χωρίς κλήση στο repository.
+### Produktansicht
 
-Η επεξεργασία προϊόντων καλύπτεται από 8 πρόσθετα tests.
+Die ersten 8 Widget-Tests prüfen:
 
-Τρία tests του repository:
+- Die Ladeanzeige und das Sperren der Hinzufügen-Funktion bis zum Abschluss des Ladens.
+- Die Anzeige einer leeren Liste.
+- Einen fehlgeschlagenen Ladevorgang mit anschließend erfolgreichem Wiederholungsversuch.
+- Fehlgeschlagenes Hinzufügen mit Beibehaltung der Eingaben und erneutem Versuch.
+- Das Verhindern doppelter Einträge durch wiederholtes Antippen von Hinzufügen.
+- Eine fehlgeschlagene Aktualisierung des Kaufstatus mit erfolgreichem Wiederholungsversuch.
+- Fehlgeschlagenes Löschen mit erfolgreichem Wiederholungsversuch.
+- Den Abbruch des Löschens ohne Aufruf des Repositorys.
 
-- Αλλαγή μόνο του επιλεγμένου προϊόντος, με διατήρηση ID και κατάστασης αγοράς.
-- Ενημέρωση ανύπαρκτου ID χωρίς αλλαγές στα υπάρχοντα προϊόντα.
-- Απόρριψη μη έγκυρου ονόματος ή ποσότητας χωρίς αλλαγή δεδομένων.
+Die Produktbearbeitung wird durch 8 zusätzliche Tests geprüft.
 
-Πέντε widget tests:
+Drei Repository-Tests:
 
-- Εμφάνιση αρχικών τιμών και επιτυχημένη αποθήκευση.
-- Ακύρωση χωρίς αποθήκευση και επαναφορά αρχικών τιμών.
-- Απόρριψη μη έγκυρης εισόδου μέχρι να διορθωθεί.
-- Αποτυχία αποθήκευσης και επιτυχημένη επανάληψη.
-- Μία μόνο ενημέρωση μετά από επαναλαμβανόμενα πατήματα.
+- Nur das ausgewählte Produkt ändern und dabei ID und Kaufstatus beibehalten.
+- Eine nicht vorhandene ID aktualisieren, ohne bestehende Produkte zu verändern.
+- Ungültige Namen oder Mengen zurückweisen, ohne Daten zu verändern.
 
-Η επιλογή και επεξεργασία κατηγορίας καλύπτονται από 5 πρόσθετα tests:
+Fünf Widget-Tests:
 
-- Αλλαγή κατηγορίας μόνο στο επιλεγμένο προϊόν και διατήρησή της
-  όταν επόμενη ενημέρωση παραλείπει την κατηγορία (repository).
-- Προσθήκη με επιλεγμένη κατηγορία και εμφάνισή της στη λίστα.
-- Επεξεργασία κατηγορίας με διατήρηση των υπόλοιπων στοιχείων.
-- Ακύρωση αλλαγής κατηγορίας χωρίς αποθήκευση.
-- Αποτυχία αλλαγής κατηγορίας με διατήρηση της επιλογής και νέα προσπάθεια.
+- Ursprüngliche Werte anzeigen und Änderungen erfolgreich speichern.
+- Ohne Speichern abbrechen und beim erneuten Öffnen die ursprünglichen Werte anzeigen.
+- Ungültige Eingaben zurückweisen, bis sie korrigiert werden.
+- Nach einem Speicherfehler einen erfolgreichen Wiederholungsversuch ermöglichen.
+- Bei wiederholtem Antippen nur eine Aktualisierung ausführen.
 
-Οι έλεγχοι πολλαπλών λιστών καλύπτουν επίσης:
+Die Auswahl und Bearbeitung der Kategorie wird durch 5 zusätzliche Tests geprüft:
 
-- Μετατροπές Map της λίστας και διατήρηση του `listId` προϊόντος.
-- Ανάγνωση της αρχικής λίστας, δημιουργία, σειρά εισαγωγής και έλεγχο ονόματος.
-- Φόρτωση μόνο των προϊόντων της επιλεγμένης λίστας.
-- Διατήρηση της λίστας στη βάση κατά την επεξεργασία προϊόντος.
-- Αποστολή του σωστού `listId` κατά την προσθήκη από την οθόνη.
-- Φόρτωση, άδεια κατάσταση και επανάληψη φόρτωσης της οθόνης λιστών.
-- Δημιουργία λίστας, validation, ακύρωση, επανάληψη μετά από αποτυχία
-  και αποτροπή διπλής υποβολής.
+- Die Kategorie nur beim ausgewählten Produkt ändern und bei einer späteren Aktualisierung ohne Kategorieangabe beibehalten (Repository).
+- Ein Produkt mit ausgewählter Kategorie hinzufügen und diese in der Liste anzeigen.
+- Die Kategorie bearbeiten und die übrigen Produktdaten beibehalten.
+- Eine Kategorieänderung ohne Speichern abbrechen.
+- Nach einer fehlgeschlagenen Kategorieänderung die Auswahl beibehalten und einen erneuten Versuch ermöglichen.
 
-Η πλοήγηση και η μετονομασία καλύπτονται από 9 πρόσθετα tests:
+### Mehrere Listen, Navigation und Umbenennen
 
-- Άνοιγμα δύο διαφορετικών λιστών με σωστά IDs, τίτλους και προϊόντα,
-  και επιστροφή στην αρχική οθόνη μέσω repositories δοκιμών.
-- Μετονομασία μόνο της επιλεγμένης λίστας με διατήρηση ID και προϊόντων.
-- Απόρριψη μη έγκυρου ονόματος χωρίς αλλαγή των λιστών.
-- Μηδενικές ενημερώσεις για ανύπαρκτη λίστα.
-- Εμφάνιση αρχικού ονόματος, αποθήκευση και νέο άνοιγμα με το ενημερωμένο όνομα.
-- Ακύρωση μετονομασίας χωρίς αποθήκευση.
-- Απόρριψη μη έγκυρης εισόδου μέχρι να διορθωθεί.
-- Διατήρηση εισόδου μετά από αποτυχία και επιτυχημένη επανάληψη.
-- Μία μόνο ενημέρωση μετά από επαναλαμβανόμενα πατήματα αποθήκευσης.
+Die Tests für mehrere Listen prüfen:
 
-Οι 8 νέοι έλεγχοι διαγραφής λίστας καλύπτουν:
+- Map-Konvertierungen des Listenmodells und das Beibehalten der `listId` eines Produkts.
+- Das Lesen der ursprünglichen Liste, das Anlegen neuer Listen, die Einfügereihenfolge und die Namensvalidierung.
+- Das Laden ausschließlich der Produkte der ausgewählten Liste.
+- Das Beibehalten der Listenzuordnung in der Datenbank beim Bearbeiten eines Produkts.
+- Die Übergabe der richtigen `listId` beim Hinzufügen aus der Produktansicht.
+- Den Ladezustand, den leeren Zustand und das erneute Laden der Listenübersicht.
+- Das Anlegen einer Liste einschließlich Validierung, Abbruch, Wiederholungsversuch nach einem Fehler und Schutz vor doppeltem Absenden.
 
-- Διαγραφή μόνο της επιλεγμένης λίστας και των προϊόντων της.
-- Διαγραφή της αρχικής λίστας και δημιουργία νέας με προϊόντα.
-- Rollback προϊόντων όταν αποτυγχάνει η διαγραφή της λίστας.
-- Μηδενικό αποτέλεσμα για ανύπαρκτο ID, χωρίς αλλαγή δεδομένων.
-- Επιβεβαίωση και ακύρωση διαγραφής στην οθόνη.
-- Διατήρηση λίστας μετά από αποτυχία και επιτυχημένη επανάληψη.
-- Απενεργοποίηση ενεργειών όσο εκκρεμεί η διαγραφή.
+Navigation und Umbenennen werden durch 9 zusätzliche Tests geprüft:
 
-Τα widget tests χρησιμοποιούν repositories δοκιμών και δεν
-συνδέονται με την πραγματική βάση της εφαρμογής.
+- Zwei unterschiedliche Listen mit den richtigen IDs, Titeln und Produkten öffnen und zur Startseite zurückkehren; dabei werden Test-Repositories verwendet.
+- Nur die ausgewählte Liste umbenennen und dabei ID und Produkte beibehalten.
+- Ungültige Namen zurückweisen, ohne Listen zu verändern.
+- Null Aktualisierungen bei einer nicht vorhandenen Liste.
+- Den ursprünglichen Namen anzeigen, Änderungen speichern und die Liste mit dem aktualisierten Namen erneut öffnen.
+- Das Umbenennen ohne Speichern abbrechen.
+- Ungültige Eingaben zurückweisen, bis sie korrigiert werden.
+- Nach einem Fehler die Eingabe beibehalten und erfolgreich erneut speichern.
+- Bei wiederholtem Antippen von Speichern nur eine Aktualisierung ausführen.
 
-Τα tests βάσης χρησιμοποιούν `sqflite_common_ffi` και απομονωμένες
-δοκιμαστικές βάσεις, χωρίς πρόσβαση στα δεδομένα του emulator.
+### Listen löschen
 
-Η κάλυψη δεν είναι εξαντλητική. Δεν ελέγχονται ακόμη αυτόματα
-όλες οι διαδρομές πλοήγησης, οι επαναλαμβανόμενες ενέργειες
-checkbox/διαγραφής και όλες οι πιθανές αποτυχίες της SQLite.
+Die 8 zusätzlichen Tests zum Löschen von Listen prüfen:
 
-Έχουν ελεγχθεί επίσης χειροκίνητα στον emulator:
+- Nur die ausgewählte Liste und ihre Produkte löschen.
+- Die ursprüngliche Liste löschen und anschließend eine neue Liste mit Produkten anlegen.
+- Das Löschen der Produkte zurückrollen, wenn das Löschen der Liste fehlschlägt.
+- Bei einer nicht vorhandenen ID den Wert `0` zurückgeben, ohne Daten zu verändern.
+- Das Löschen in der Benutzeroberfläche bestätigen oder abbrechen.
+- Die Liste nach einem Fehler beibehalten und erfolgreich erneut löschen.
+- Aktionen während eines laufenden Löschvorgangs deaktivieren.
 
-- Προσθήκη προϊόντος και ποσότητας και έλεγχος μη έγκυρης εισόδου.
-- Επισήμανση και αποεπιλογή αγορασμένου προϊόντος.
-- Ακύρωση και επιβεβαίωση διαγραφής.
-- Επεξεργασία ονόματος και ποσότητας και ακύρωση χωρίς αποθήκευση.
-- Διατήρηση της κατάστασης αγοράς κατά την επεξεργασία.
-- Διατήρηση των αποθηκευμένων αλλαγών μετά από Stop → Run.
-- Αλλαγή κατηγορίας υπάρχοντος προϊόντος, ακύρωση και διατήρηση
-  της αποθηκευμένης κατηγορίας μετά από Stop → Run.
+### Testumgebung und Grenzen
 
-- Επιλογή λίστας, άνοιγμα προϊόντων και επιστροφή στην αρχική οθόνη.
-- Δημιουργία δεύτερης λίστας, διαχωρισμός προϊόντων και διατήρηση μετά από Stop → Run.
+Die Widget-Tests verwenden Test-Repositories und greifen nicht auf die eigentliche Datenbank der App zu.
 
-- Μετονομασία λίστας, ακύρωση, έλεγχος κενού ονόματος και ενημέρωση τίτλου.
-- Διατήρηση νέου ονόματος και προϊόντων μετά από Stop → Run.
+Die Datenbanktests verwenden `sqflite_common_ffi` und isolierte Testdatenbanken. Sie greifen nicht auf die Daten des Emulators zu.
 
-- Διαγραφή όλων των λιστών μαζί με την αρχική και εμφάνιση κενής οθόνης.
-- Δημιουργία νέας λίστας με δύο προϊόντα και διατήρηση μετά από Stop → Run,
-  χωρίς επανεμφάνιση των διαγραμμένων λιστών.
+Die Testabdeckung ist nicht vollständig. Noch nicht alle Navigationswege, wiederholten Checkbox- und Löschaktionen sowie möglichen SQLite-Fehler werden automatisch geprüft.
 
-## Επόμενα βήματα
+### Manuelle Prüfungen im Emulator
 
-- Επιλογή του επόμενου χαρακτηριστικού μετά την ολοκλήρωση και καταγραφή
-  της διαγραφής λιστών.
+Zusätzlich wurden folgende Abläufe manuell geprüft:
 
-## Μελλοντικός στόχος
+- Produkte mit Mengen hinzufügen und ungültige Eingaben prüfen.
+- Produkte als gekauft markieren und die Markierung wieder entfernen.
+- Das Löschen abbrechen und bestätigen.
+- Namen und Mengen bearbeiten sowie ohne Speichern abbrechen.
+- Den Kaufstatus beim Bearbeiten beibehalten.
+- Gespeicherte Änderungen nach Stop → Run beibehalten.
+- Die Kategorie eines vorhandenen Produkts ändern, Änderungen abbrechen und die gespeicherte Kategorie nach Stop → Run beibehalten.
+- Eine Liste auswählen, ihre Produkte öffnen und zur Startseite zurückkehren.
+- Eine zweite Liste anlegen, Produkte getrennt verwalten und nach Stop → Run beibehalten.
+- Listen umbenennen, den Vorgang abbrechen, leere Namen prüfen und den Titel aktualisieren.
+- Den neuen Namen und die Produkte nach Stop → Run beibehalten.
+- Alle Listen einschließlich der ursprünglichen löschen und den leeren Zustand anzeigen.
+- Eine neue Liste mit zwei Produkten anlegen und nach Stop → Run beibehalten, ohne dass gelöschte Listen erneut erscheinen.
 
-Σταδιακή προσθήκη δεδομένων προϊόντων και supermarket,
-σύγκρισης τιμών και υπολογισμού του καλύτερου συνολικού
-καλαθιού αγορών.
+## Nächste Schritte
 
-Η ανάπτυξη προχωρά βήμα-βήμα, με προτεραιότητα
-την αξιοπιστία και την απλή χρήση.
+- Nach Abschluss und Dokumentation der Listenlöschung die nächste Funktion auswählen.
+
+## Langfristiges Ziel
+
+Schrittweise sollen Produkt- und Supermarktdaten, Preisvergleiche und die Berechnung des günstigsten gesamten Warenkorbs hinzukommen.
+
+Die Entwicklung erfolgt Schritt für Schritt. Zuverlässigkeit und einfache Bedienung stehen dabei im Vordergrund.
